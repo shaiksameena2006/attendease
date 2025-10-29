@@ -73,3 +73,6 @@ verify_jwt = true
 
 [functions.ai-analytics]
 verify_jwt = true
+
+[functions.initialize-user-data]
+verify_jwt = false

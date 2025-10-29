@@ -1,73 +1,179 @@
-# Welcome to your Lovable project
+# Attendease - Campus Management System
 
-## Project info
+A comprehensive Progressive Web App (PWA) designed to revolutionize campus management for colleges and universities.
 
-**URL**: https://lovable.dev/projects/a73c470b-1af5-473b-8a2b-8553885d4e3c
+## 🎓 Project Overview
 
-## How can I edit this code?
+Attendease is an all-in-one digital ecosystem that automates traditional campus operations while fostering seamless communication between students, faculty, and administrators. Built with modern web technologies, it provides a native app-like experience with powerful features for campus management.
 
-There are several ways of editing your application.
+**Project URL**: https://lovable.dev/projects/a73c470b-1af5-473b-8a2b-8553885d4e3c
 
-**Use Lovable**
+## 🚀 Key Features
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/a73c470b-1af5-473b-8a2b-8553885d4e3c) and start prompting.
+### For Students
+- **Automated Attendance**: Face recognition and Bluetooth proximity-based check-in
+- **Interactive Timetable**: Real-time schedule with automatic updates
+- **Events Hub**: Browse, register, and participate in campus events
+- **Clubs & Houses**: Join clubs and compete in house competitions
+- **Digital Certificates**: Access certificates with QR verification
+- **Messaging**: Real-time peer-to-peer and group messaging
+- **Transport**: Bus tracking and digital pass management
 
-Changes made via Lovable will be committed automatically to this repo.
+### For Faculty
+- **Class Management**: Manage students and track attendance
+- **Timetable Creator**: Drag-and-drop scheduling with conflict detection
+- **Certificate Issuance**: Generate and approve certificates
+- **CO-PO Management**: Track course and program outcomes
+- **Event Management**: Create and manage campus events
+- **AI Analytics**: Get insights on attendance patterns
 
-**Use your preferred IDE**
+### For Administrators
+- **User Management**: Approve registrations and manage roles
+- **System Dashboard**: Comprehensive analytics and metrics
+- **Academic Setup**: Configure courses, semesters, examinations
+- **Transport Admin**: Manage routes, buses, and passes
+- **Security**: Audit logs and access control
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🛠️ Tech Stack
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- **Frontend**: React 18, TypeScript, Tailwind CSS, Vite
+- **Backend**: Supabase (Auth, Database, Storage, Real-time)
+- **AI**: Lovable AI with Google Gemini 2.5
+- **APIs**: Web Bluetooth, WebRTC, Push Notifications, Geolocation
 
-Follow these steps:
+## 📦 Installation & Setup
+
+### Prerequisites
+- Node.js 18+ or Bun
+- Supabase account
+
+### Quick Start
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
+# Clone the repository
 git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
 cd <YOUR_PROJECT_NAME>
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Install dependencies
+npm install
+# or
+bun install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
+# or
+bun dev
 ```
 
-**Edit a file directly in GitHub**
+The app will be available at `http://localhost:5173`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Build for Production
 
-**Use GitHub Codespaces**
+```sh
+npm run build
+# or
+bun build
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🔐 Security Features
 
-## What technologies are used for this project?
+- **Input Validation**: Zod schemas for all inputs
+- **Rate Limiting**: Protection against abuse
+- **XSS Protection**: Input sanitization
+- **CSRF Protection**: Token-based prevention
+- **RLS Policies**: Database-level access control
+- **Audit Logging**: Track all sensitive operations
 
-This project is built with:
+## 📱 PWA Capabilities
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- **Offline Mode**: Core features work without internet
+- **Background Sync**: Data syncs when connection restored
+- **Push Notifications**: AI-powered smart notifications
+- **App Shortcuts**: Quick access to key features
+- **Native Experience**: Installable as a mobile app
 
-## How can I deploy this project?
+## ♿ Accessibility
 
-Simply open [Lovable](https://lovable.dev/projects/a73c470b-1af5-473b-8a2b-8553885d4e3c) and click on Share -> Publish.
+- WCAG 2.1 AA compliant
+- Screen reader optimized
+- Keyboard navigation support
+- High contrast themes
+- 44x44px touch targets
+- Reduced motion support
 
-## Can I connect a custom domain to my Lovable project?
+## 🚄 Performance
 
-Yes, you can!
+- Code splitting & lazy loading
+- Image optimization
+- Service worker caching
+- Debounced event handlers
+- Memoized computations
+- < 200KB initial bundle
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## 📊 Database Schema
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Key tables:
+- `profiles` - User information
+- `user_roles` - Role-based access
+- `attendance_records` - Attendance tracking
+- `timetable_entries` - Schedules
+- `events` - Campus events
+- `clubs` & `houses` - Organizations
+- `certificates` - Digital certificates
+- `messages` - Chat system
+- `buses`, `bus_routes` - Transport
+
+## 🔧 Edge Functions
+
+1. **ai-notifications**: AI-powered notifications
+2. **ai-analytics**: Analytics with AI insights
+3. **initialize-user-data**: Auto-setup for new users
+
+## 📝 Development
+
+### Using Lovable Editor
+Visit [Lovable Project](https://lovable.dev/projects/a73c470b-1af5-473b-8a2b-8553885d4e3c) and start prompting. Changes commit automatically.
+
+### Using Your IDE
+Make changes locally and push. They'll sync to Lovable automatically.
+
+### Using GitHub Codespaces
+1. Click "Code" button
+2. Select "Codespaces" tab
+3. Click "New codespace"
+4. Edit and commit directly
+
+## 🚀 Deployment
+
+1. Open [Lovable](https://lovable.dev/projects/a73c470b-1af5-473b-8a2b-8553885d4e3c)
+2. Click Share → Publish
+3. Optionally connect custom domain in Project > Settings > Domains
+
+[Learn more about custom domains](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+## 📖 Documentation
+
+- [Phase 1-8 Implementation Docs](./docs/)
+- [API Documentation](./docs/api.md)
+- [Security Guidelines](./docs/security.md)
+- [Deployment Guide](./docs/deployment.md)
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make changes with tests
+4. Submit pull request
+
+## 📄 License
+
+Copyright © 2025 Attendease. All rights reserved.
+
+## 🙏 Acknowledgments
+
+Built with [Lovable](https://lovable.app) • Powered by [Supabase](https://supabase.com) • AI by [Google Gemini](https://deepmind.google/technologies/gemini/)
+
+## 📞 Support
+
+Email: support@attendease.edu  
+Help: Available in-app Help & Support section

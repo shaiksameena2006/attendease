@@ -11,7 +11,7 @@ interface AuthContextType {
   role: Role | null;
   isApproved: boolean;
   isLoading: boolean;
-  signUp: (email: string, password: string, role: Role, fullName: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, role: Role, fullName: string, additionalData?: any) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   storeFaceEncoding: (encoding: string) => Promise<{ error: any }>;
@@ -89,11 +89,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, role: Role, fullName: string) => {
+  const signUp = async (
+    email: string, 
+    password: string, 
+    role: Role, 
+    fullName: string,
+    additionalData?: any
+  ) => {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -101,11 +107,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           data: {
             role,
             full_name: fullName,
+            ...additionalData,
           },
         },
       });
 
-      return { error };
+      if (error) return { error };
+
+      // Initialize user data after successful signup
+      if (data.user) {
+        try {
+          await supabase.functions.invoke("initialize-user-data", {
+            body: { 
+              userId: data.user.id, 
+              role, 
+              fullName, 
+              email,
+              ...additionalData,
+            },
+          });
+        } catch (initError) {
+          console.error("Failed to initialize user data:", initError);
+          // Don't fail registration if initialization fails
+        }
+      }
+
+      return { error: null };
     } catch (error: any) {
       return { error };
     }
