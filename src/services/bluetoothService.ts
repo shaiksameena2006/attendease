@@ -130,6 +130,40 @@ class BluetoothService {
     studentId: string
   ): Promise<boolean> {
     try {
+      // 1. Check authentication
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        toast({
+          title: "Authentication required",
+          description: "You must be logged in to mark attendance",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      // 2. Verify authorization - student can only mark their own attendance
+      if (user.id !== studentId) {
+        toast({
+          title: "Authorization failed",
+          description: "You can only mark your own attendance",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      // 3. Validate UUID format
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(sessionId) || !uuidRegex.test(studentId)) {
+        toast({
+          title: "Invalid input",
+          description: "Invalid session or student ID format",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      // 4. Insert attendance record (RLS policies provide additional authorization layer)
       const { error } = await supabase
         .from("attendance_records")
         .insert({
@@ -152,7 +186,7 @@ class BluetoothService {
       console.error("Failed to mark attendance:", error);
       toast({
         title: "Attendance failed",
-        description: "Failed to mark attendance",
+        description: "Failed to mark attendance. Please try again.",
         variant: "destructive",
       });
       return false;
