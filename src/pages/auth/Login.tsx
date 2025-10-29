@@ -1,45 +1,88 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Scan } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RoleSelector } from "@/components/auth/RoleSelector";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { z } from "zod";
 
-type Role = "student" | "faculty" | "admin";
+const loginSchema = z.object({
+  email: z.string().email("Invalid email address").max(255, "Email too long"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
 
 export default function Login() {
-  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const navigate = useNavigate();
+  const { signIn, user, isApproved } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && isApproved) {
+      navigate("/", { replace: true });
+    }
+  }, [user, isApproved, navigate]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!selectedRole) {
-      toast({
-        title: "Role required",
-        description: "Please select your role to continue",
-        variant: "destructive",
-      });
+
+    // Validate input
+    try {
+      loginSchema.parse({ email, password });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Validation error",
+          description: error.errors[0].message,
+          variant: "destructive",
+        });
+      }
       return;
     }
 
     setIsLoading(true);
-    // Simulate login process
-    setTimeout(() => {
+
+    const { error } = await signIn(email, password);
+
+    if (error) {
       setIsLoading(false);
-      toast({
-        title: "Login successful",
-        description: `Welcome back, ${selectedRole}!`,
-      });
-    }, 1500);
+      
+      if (error.message.includes("Invalid login credentials")) {
+        toast({
+          title: "Login failed",
+          description: "Invalid email or password. Please try again.",
+          variant: "destructive",
+        });
+      } else if (error.message.includes("Email not confirmed")) {
+        toast({
+          title: "Email not confirmed",
+          description: "Please check your email and confirm your account.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Login failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+
+    setIsLoading(false);
+    toast({
+      title: "Login successful",
+      description: "Welcome back to Attendease!",
+    });
+    navigate("/");
   };
 
   const handleFaceLogin = () => {
@@ -62,14 +105,6 @@ export default function Login() {
         </CardHeader>
 
         <CardContent className="space-y-6">
-          <div className="space-y-3">
-            <Label>Select Your Role</Label>
-            <RoleSelector
-              selectedRole={selectedRole}
-              onRoleSelect={setSelectedRole}
-            />
-          </div>
-
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Institutional Email</Label>

@@ -2,6 +2,7 @@ import { Moon, Sun, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/contexts/ThemeContext";
 import { HamburgerMenu } from "@/components/navigation/HamburgerMenu";
+import { UserMenu } from "./UserMenu";
 
 export function AppHeader() {
   const { theme, toggleTheme } = useTheme();
@@ -30,6 +31,8 @@ export function AppHeader() {
           <Button variant="ghost" size="icon" aria-label="Notifications">
             <Bell className="w-5 h-5" />
           </Button>
+
+          <UserMenu />
 
           <HamburgerMenu />
         </div>

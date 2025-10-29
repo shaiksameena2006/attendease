@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,11 +10,22 @@ import { RoleSelector } from "@/components/auth/RoleSelector";
 import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
 import { FaceCaptureInterface } from "@/components/auth/FaceCaptureInterface";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { z } from "zod";
 
 type Role = "student" | "faculty" | "admin";
 
+const registerSchema = z.object({
+  email: z.string().email("Invalid email address").max(255, "Email too long"),
+  fullName: z.string().min(2, "Name must be at least 2 characters").max(100, "Name too long"),
+  password: z.string().min(8, "Password must be at least 8 characters").max(100, "Password too long"),
+});
+
 export default function Register() {
+  const navigate = useNavigate();
+  const { signUp, user, storeFaceEncoding } = useAuth();
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -23,6 +34,13 @@ export default function Register() {
   const [faceCaptured, setFaceCaptured] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate("/", { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,10 +54,24 @@ export default function Register() {
       return;
     }
 
+    // Validate input
+    try {
+      registerSchema.parse({ email, fullName, password });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast({
+          title: "Validation error",
+          description: error.errors[0].message,
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+
     if (password !== confirmPassword) {
       toast({
         title: "Passwords don't match",
-        description: "Please make sure your passwords match",
+        description: "Please ensure both passwords are the same",
         variant: "destructive",
       });
       return;
@@ -48,7 +80,7 @@ export default function Register() {
     if (!faceCaptured) {
       toast({
         title: "Face capture required",
-        description: "Please complete face recognition enrollment",
+        description: "Please capture your face for biometric enrollment",
         variant: "destructive",
       });
       return;
@@ -64,14 +96,37 @@ export default function Register() {
     }
 
     setIsLoading(true);
-    // Simulate registration process
-    setTimeout(() => {
+
+    const { error } = await signUp(email, password, selectedRole, fullName);
+
+    if (error) {
       setIsLoading(false);
-      toast({
-        title: "Registration submitted",
-        description: "Your account is pending admin approval. You'll be notified via email.",
-      });
-    }, 2000);
+      
+      if (error.message.includes("User already registered")) {
+        toast({
+          title: "Account exists",
+          description: "An account with this email already exists. Please sign in.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Registration failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+
+    // Store face encoding (simulated for now)
+    await storeFaceEncoding("simulated_face_encoding_" + Date.now());
+
+    setIsLoading(false);
+    toast({
+      title: "Registration successful",
+      description: "Please check your email to verify your account.",
+    });
+    navigate("/auth/verification-pending");
   };
 
   return (
@@ -96,6 +151,18 @@ export default function Register() {
           </div>
 
           <form onSubmit={handleRegister} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Full Name</Label>
+              <Input
+                id="fullName"
+                type="text"
+                placeholder="Enter your full name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required
+              />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="register-email">Institutional Email</Label>
               <Input

@@ -1,19 +1,20 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, ReactNode } from "react";
+import { useAuth } from "./AuthContext";
 
 type Role = "student" | "faculty" | "admin";
 
 interface RoleContextType {
   role: Role;
-  setRole: (role: Role) => void;
 }
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
 
 export function RoleProvider({ children }: { children: ReactNode }) {
-  const [role, setRole] = useState<Role>("student");
+  const { role: authRole } = useAuth();
+  const role = authRole || "student"; // Default to student if no role
 
   return (
-    <RoleContext.Provider value={{ role, setRole }}>
+    <RoleContext.Provider value={{ role }}>
       {children}
     </RoleContext.Provider>
   );

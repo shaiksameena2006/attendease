@@ -4,9 +4,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { RoleProvider } from "@/contexts/RoleContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AppShell } from "@/components/layout/AppShell";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Index from "./pages/Index";
 import Schedule from "./pages/Schedule";
 import Events from "./pages/Events";
@@ -50,11 +52,12 @@ const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <RoleProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
+        <AuthProvider>
+          <RoleProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
             <Routes>
               {/* Auth routes without AppShell */}
               <Route path="/auth/login" element={<Login />} />
@@ -62,45 +65,46 @@ const App = () => (
               <Route path="/auth/reset-password" element={<ResetPassword />} />
               <Route path="/auth/verification-pending" element={<VerificationPending />} />
               
-              {/* App routes with AppShell */}
-              <Route path="/" element={<AppShell><Index /></AppShell>} />
-              <Route path="/schedule" element={<AppShell><Schedule /></AppShell>} />
-              <Route path="/events" element={<AppShell><Events /></AppShell>} />
-              <Route path="/profile" element={<AppShell><Profile /></AppShell>} />
+              {/* App routes with AppShell and ProtectedRoute */}
+              <Route path="/" element={<ProtectedRoute><AppShell><Index /></AppShell></ProtectedRoute>} />
+              <Route path="/schedule" element={<ProtectedRoute><AppShell><Schedule /></AppShell></ProtectedRoute>} />
+              <Route path="/events" element={<ProtectedRoute><AppShell><Events /></AppShell></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><AppShell><Profile /></AppShell></ProtectedRoute>} />
               
               {/* Student routes */}
-              <Route path="/student/attendance" element={<AppShell><AttendanceTracker /></AppShell>} />
-              <Route path="/student/timetable" element={<AppShell><Timetable /></AppShell>} />
-              <Route path="/student/clubs" element={<AppShell><ClubsHouses /></AppShell>} />
-              <Route path="/student/certificates" element={<AppShell><Certificates /></AppShell>} />
-              <Route path="/student/messages" element={<AppShell><Messages /></AppShell>} />
-              <Route path="/student/transport" element={<AppShell><Transport /></AppShell>} />
+              <Route path="/student/attendance" element={<ProtectedRoute allowedRoles={["student"]}><AppShell><AttendanceTracker /></AppShell></ProtectedRoute>} />
+              <Route path="/student/timetable" element={<ProtectedRoute allowedRoles={["student"]}><AppShell><Timetable /></AppShell></ProtectedRoute>} />
+              <Route path="/student/clubs" element={<ProtectedRoute allowedRoles={["student"]}><AppShell><ClubsHouses /></AppShell></ProtectedRoute>} />
+              <Route path="/student/certificates" element={<ProtectedRoute allowedRoles={["student"]}><AppShell><Certificates /></AppShell></ProtectedRoute>} />
+              <Route path="/student/messages" element={<ProtectedRoute allowedRoles={["student"]}><AppShell><Messages /></AppShell></ProtectedRoute>} />
+              <Route path="/student/transport" element={<ProtectedRoute allowedRoles={["student"]}><AppShell><Transport /></AppShell></ProtectedRoute>} />
               
               {/* Faculty routes */}
-              <Route path="/faculty/classes" element={<AppShell><ClassManagement /></AppShell>} />
-              <Route path="/faculty/timetable" element={<AppShell><TimetableManager /></AppShell>} />
-              <Route path="/faculty/certificates" element={<AppShell><CertificateGenerator /></AppShell>} />
-              <Route path="/faculty/co-po" element={<AppShell><COPOManagement /></AppShell>} />
-              <Route path="/faculty/events" element={<AppShell><EventManagement /></AppShell>} />
+              <Route path="/faculty/classes" element={<ProtectedRoute allowedRoles={["faculty"]}><AppShell><ClassManagement /></AppShell></ProtectedRoute>} />
+              <Route path="/faculty/timetable" element={<ProtectedRoute allowedRoles={["faculty"]}><AppShell><TimetableManager /></AppShell></ProtectedRoute>} />
+              <Route path="/faculty/certificates" element={<ProtectedRoute allowedRoles={["faculty"]}><AppShell><CertificateGenerator /></AppShell></ProtectedRoute>} />
+              <Route path="/faculty/co-po" element={<ProtectedRoute allowedRoles={["faculty"]}><AppShell><COPOManagement /></AppShell></ProtectedRoute>} />
+              <Route path="/faculty/events" element={<ProtectedRoute allowedRoles={["faculty"]}><AppShell><EventManagement /></AppShell></ProtectedRoute>} />
               
               {/* Admin routes */}
-              <Route path="/admin/users" element={<AppShell><UserManagement /></AppShell>} />
-              <Route path="/admin/analytics" element={<AppShell><Analytics /></AppShell>} />
-              <Route path="/admin/academic" element={<AppShell><AcademicManagement /></AppShell>} />
-              <Route path="/admin/transport" element={<AppShell><TransportAdmin /></AppShell>} />
-              <Route path="/admin/settings" element={<AppShell><SystemSettings /></AppShell>} />
+              <Route path="/admin/users" element={<ProtectedRoute allowedRoles={["admin"]}><AppShell><UserManagement /></AppShell></ProtectedRoute>} />
+              <Route path="/admin/analytics" element={<ProtectedRoute allowedRoles={["admin"]}><AppShell><Analytics /></AppShell></ProtectedRoute>} />
+              <Route path="/admin/academic" element={<ProtectedRoute allowedRoles={["admin"]}><AppShell><AcademicManagement /></AppShell></ProtectedRoute>} />
+              <Route path="/admin/transport" element={<ProtectedRoute allowedRoles={["admin"]}><AppShell><TransportAdmin /></AppShell></ProtectedRoute>} />
+              <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={["admin"]}><AppShell><SystemSettings /></AppShell></ProtectedRoute>} />
               
               {/* Shared routes */}
-              <Route path="/notifications" element={<AppShell><Notifications /></AppShell>} />
-              <Route path="/settings" element={<AppShell><SettingsPage /></AppShell>} />
-              <Route path="/help" element={<AppShell><HelpSupport /></AppShell>} />
+              <Route path="/notifications" element={<ProtectedRoute><AppShell><Notifications /></AppShell></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><AppShell><SettingsPage /></AppShell></ProtectedRoute>} />
+              <Route path="/help" element={<ProtectedRoute><AppShell><HelpSupport /></AppShell></ProtectedRoute>} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </RoleProvider>
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </RoleProvider>
+      </AuthProvider>
     </ThemeProvider>
     </QueryClientProvider>
   </ErrorBoundary>
