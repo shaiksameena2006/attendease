@@ -1,12 +1,23 @@
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FloatingActionButton } from "@/components/navigation/FloatingActionButton";
+import { Button } from "@/components/ui/button";
+import { LogIn } from "lucide-react";
 
 export default function Index() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Welcome Back!</h1>
-        <p className="text-muted-foreground mt-2">Here's your campus overview</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Welcome Back!</h1>
+          <p className="text-muted-foreground mt-2">Here's your campus overview</p>
+        </div>
+        <Button asChild>
+          <Link to="/auth/login">
+            <LogIn className="w-4 h-4 mr-2" />
+            Sign In
+          </Link>
+        </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

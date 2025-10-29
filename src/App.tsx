@@ -10,6 +10,10 @@ import Index from "./pages/Index";
 import Schedule from "./pages/Schedule";
 import Events from "./pages/Events";
 import Profile from "./pages/Profile";
+import Login from "./pages/auth/Login";
+import Register from "./pages/auth/Register";
+import ResetPassword from "./pages/auth/ResetPassword";
+import VerificationPending from "./pages/auth/VerificationPending";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,16 +26,22 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <AppShell>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/schedule" element={<Schedule />} />
-                <Route path="/events" element={<Events />} />
-                <Route path="/profile" element={<Profile />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </AppShell>
+            <Routes>
+              {/* Auth routes without AppShell */}
+              <Route path="/auth/login" element={<Login />} />
+              <Route path="/auth/register" element={<Register />} />
+              <Route path="/auth/reset-password" element={<ResetPassword />} />
+              <Route path="/auth/verification-pending" element={<VerificationPending />} />
+              
+              {/* App routes with AppShell */}
+              <Route path="/" element={<AppShell><Index /></AppShell>} />
+              <Route path="/schedule" element={<AppShell><Schedule /></AppShell>} />
+              <Route path="/events" element={<AppShell><Events /></AppShell>} />
+              <Route path="/profile" element={<AppShell><Profile /></AppShell>} />
+              
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
           </BrowserRouter>
         </TooltipProvider>
       </ThemeProvider>
