@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,14 +13,51 @@ serve(async (req) => {
   }
 
   try {
+    // Verify authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }), 
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { userId, role, fullName, email, branch, year, department } = await req.json();
+    // Get authenticated user from JWT
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid authentication token' }), 
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    if (!userId || !role) {
-      throw new Error("Missing required fields");
+    // Validate input with Zod schema
+    const inputSchema = z.object({
+      userId: z.string().uuid(),
+      role: z.enum(['student', 'faculty', 'admin']),
+      fullName: z.string().min(2).max(100),
+      email: z.string().email().max(255),
+      branch: z.string().max(100).optional(),
+      year: z.number().int().min(1).max(5).optional(),
+      department: z.string().max(100).optional(),
+    });
+
+    const requestBody = await req.json();
+    const validatedData = inputSchema.parse(requestBody);
+    const { userId, role, fullName, email, branch, year, department } = validatedData;
+
+    // Verify user can only initialize their own data
+    if (user.id !== userId) {
+      return new Response(
+        JSON.stringify({ error: 'Cannot initialize data for another user' }), 
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     console.log("Initializing user data for:", userId, role);
@@ -117,10 +155,22 @@ serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Error initializing user data:", error);
+    console.error("[INTERNAL] Error initializing user data:", error);
+    
+    // Handle Zod validation errors specifically
+    if (error instanceof z.ZodError) {
+      return new Response(
+        JSON.stringify({ 
+          error: "Invalid input data provided",
+          details: error.errors 
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
     return new Response(
       JSON.stringify({ 
-        error: error instanceof Error ? error.message : "Failed to initialize user data" 
+        error: "An error occurred processing your request. Please try again."
       }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

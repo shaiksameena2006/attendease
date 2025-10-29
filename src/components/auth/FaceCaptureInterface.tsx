@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Camera, Check } from "lucide-react";
+import { Camera, Check, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 
 interface FaceCaptureInterfaceProps {
@@ -14,7 +15,9 @@ export function FaceCaptureInterface({ onCapture }: FaceCaptureInterfaceProps) {
 
   const handleCapture = () => {
     setIsCapturing(true);
-    // Simulate camera capture process
+    // NOTE: This is a PLACEHOLDER implementation for development only
+    // Real face recognition requires: WebRTC camera access, face detection library,
+    // face encoding generation, and server-side verification
     setTimeout(() => {
       setIsCaptured(true);
       setIsCapturing(false);
@@ -26,8 +29,16 @@ export function FaceCaptureInterface({ onCapture }: FaceCaptureInterfaceProps) {
     <Card className="border-2">
       <CardContent className="p-6">
         <div className="space-y-4">
+          <Alert variant="destructive" className="mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Development Mode:</strong> Face recognition is currently a placeholder. 
+              Real biometric authentication is not implemented. Do not use in production.
+            </AlertDescription>
+          </Alert>
+
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold">Face Recognition Setup</h3>
+            <h3 className="font-semibold">Face Recognition Setup (Placeholder)</h3>
             {isCaptured && (
               <div className="flex items-center gap-2 text-accent">
                 <Check className="w-4 h-4" />
@@ -68,7 +79,7 @@ export function FaceCaptureInterface({ onCapture }: FaceCaptureInterfaceProps) {
           </Button>
 
           <p className="text-xs text-muted-foreground text-center">
-            Your biometric data is encrypted and stored securely
+            ⚠️ This is a UI placeholder only. No actual biometric data is captured or verified.
           </p>
         </div>
       </CardContent>
