@@ -1,76 +1,52 @@
-import { Link } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FloatingActionButton } from "@/components/navigation/FloatingActionButton";
-import { Button } from "@/components/ui/button";
-import { LogIn } from "lucide-react";
+import { useRole } from "@/contexts/RoleContext";
+import { StudentDashboard } from "./dashboard/StudentDashboard";
+import { FacultyDashboard } from "./dashboard/FacultyDashboard";
+import { AdminDashboard } from "./dashboard/AdminDashboard";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Index() {
+  const { role, setRole } = useRole();
+
+  const renderDashboard = () => {
+    switch (role) {
+      case "student":
+        return <StudentDashboard />;
+      case "faculty":
+        return <FacultyDashboard />;
+      case "admin":
+        return <AdminDashboard />;
+      default:
+        return <StudentDashboard />;
+    }
+  };
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Welcome Back!</h1>
-          <p className="text-muted-foreground mt-2">Here's your campus overview</p>
-        </div>
-        <Button asChild>
-          <Link to="/auth/login">
-            <LogIn className="w-4 h-4 mr-2" />
-            Sign In
-          </Link>
-        </Button>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">Attendance</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-accent">92%</div>
-            <p className="text-xs text-muted-foreground mt-1">Overall this semester</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">Upcoming Classes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">3</div>
-            <p className="text-xs text-muted-foreground mt-1">Today</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">Events</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">2</div>
-            <p className="text-xs text-muted-foreground mt-1">This week</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Today's Schedule</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">Your schedule will appear here...</p>
+      {/* Role Switcher - Demo purposes only */}
+      <Card className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex-1">
+              <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
+                Demo Mode: Switch roles to preview different dashboards
+              </p>
+              <p className="text-xs text-amber-700 dark:text-amber-300 mt-1">
+                This role switcher is for demonstration only and will be replaced with proper authentication
+              </p>
+            </div>
+            <Tabs value={role} onValueChange={(value) => setRole(value as any)}>
+              <TabsList>
+                <TabsTrigger value="student">Student</TabsTrigger>
+                <TabsTrigger value="faculty">Faculty</TabsTrigger>
+                <TabsTrigger value="admin">Admin</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Notifications</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">No new notifications</p>
-        </CardContent>
-      </Card>
-
-      <FloatingActionButton onClick={() => console.log("Quick action")} />
+      {/* Render Role-Based Dashboard */}
+      {renderDashboard()}
     </div>
   );
 }
