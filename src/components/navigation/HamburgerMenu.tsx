@@ -1,21 +1,63 @@
+import { 
+  Menu, X, User, Settings, LogOut, Calendar, Users, FileText, 
+  CheckSquare, Trophy, Award, MessageSquare, Bus, Bell, HelpCircle,
+  BarChart3, BookOpen, Target, CalendarDays, Shield, Database, Sliders
+} from "lucide-react";
 import { useState } from "react";
-import { Menu, X, BarChart, Users, Award, Bus, MessageSquare, Settings, HelpCircle, LogOut } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useRole } from "@/contexts/RoleContext";
 import { Button } from "@/components/ui/button";
-
-const menuItems = [
-  { to: "/attendance", icon: BarChart, label: "Attendance" },
-  { to: "/clubs", icon: Users, label: "Clubs & Houses" },
-  { to: "/certificates", icon: Award, label: "Certificates" },
-  { to: "/transport", icon: Bus, label: "Transport" },
-  { to: "/messages", icon: MessageSquare, label: "Messages" },
-  { to: "/settings", icon: Settings, label: "Settings" },
-  { to: "/support", icon: HelpCircle, label: "Help & Support" },
-];
 
 export function HamburgerMenu() {
   const [isOpen, setIsOpen] = useState(false);
+  const { role } = useRole();
+
+  const studentMenuItems = [
+    { icon: CheckSquare, label: "Attendance", to: "/student/attendance" },
+    { icon: Calendar, label: "Timetable", to: "/student/timetable" },
+    { icon: Trophy, label: "Clubs & Houses", to: "/student/clubs" },
+    { icon: Award, label: "Certificates", to: "/student/certificates" },
+    { icon: MessageSquare, label: "Messages", to: "/student/messages" },
+    { icon: Bus, label: "Transport", to: "/student/transport" },
+  ];
+
+  const facultyMenuItems = [
+    { icon: Users, label: "Class Management", to: "/faculty/classes" },
+    { icon: Calendar, label: "Timetable Manager", to: "/faculty/timetable" },
+    { icon: Award, label: "Certificates", to: "/faculty/certificates" },
+    { icon: Target, label: "CO-PO Management", to: "/faculty/co-po" },
+    { icon: CalendarDays, label: "Events", to: "/faculty/events" },
+  ];
+
+  const adminMenuItems = [
+    { icon: Users, label: "User Management", to: "/admin/users" },
+    { icon: BarChart3, label: "Analytics", to: "/admin/analytics" },
+    { icon: BookOpen, label: "Academic Management", to: "/admin/academic" },
+    { icon: Bus, label: "Transport Admin", to: "/admin/transport" },
+    { icon: Sliders, label: "System Settings", to: "/admin/settings" },
+  ];
+
+  const sharedMenuItems = [
+    { icon: Bell, label: "Notifications", to: "/notifications" },
+    { icon: Settings, label: "Settings", to: "/settings" },
+    { icon: HelpCircle, label: "Help & Support", to: "/help" },
+  ];
+
+  const getMenuItems = () => {
+    switch (role) {
+      case "student":
+        return studentMenuItems;
+      case "faculty":
+        return facultyMenuItems;
+      case "admin":
+        return adminMenuItems;
+      default:
+        return studentMenuItems;
+    }
+  };
+
+  const menuItems = [...getMenuItems(), ...sharedMenuItems];
 
   const toggleMenu = () => setIsOpen(!isOpen);
 

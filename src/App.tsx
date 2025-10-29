@@ -34,6 +34,15 @@ import EventManagement from "./pages/faculty/EventManagement";
 
 // Admin pages
 import UserManagement from "./pages/admin/UserManagement";
+import Analytics from "./pages/admin/Analytics";
+import AcademicManagement from "./pages/admin/AcademicManagement";
+import TransportAdmin from "./pages/admin/TransportAdmin";
+import SystemSettings from "./pages/admin/SystemSettings";
+
+// Shared pages
+import Notifications from "./pages/shared/Notifications";
+import SettingsPage from "./pages/shared/SettingsPage";
+import HelpSupport from "./pages/shared/HelpSupport";
 
 const queryClient = new QueryClient();
 
@@ -76,6 +85,15 @@ const App = () => (
               
               {/* Admin routes */}
               <Route path="/admin/users" element={<AppShell><UserManagement /></AppShell>} />
+              <Route path="/admin/analytics" element={<AppShell><Analytics /></AppShell>} />
+              <Route path="/admin/academic" element={<AppShell><AcademicManagement /></AppShell>} />
+              <Route path="/admin/transport" element={<AppShell><TransportAdmin /></AppShell>} />
+              <Route path="/admin/settings" element={<AppShell><SystemSettings /></AppShell>} />
+              
+              {/* Shared routes */}
+              <Route path="/notifications" element={<AppShell><Notifications /></AppShell>} />
+              <Route path="/settings" element={<AppShell><SettingsPage /></AppShell>} />
+              <Route path="/help" element={<AppShell><HelpSupport /></AppShell>} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
