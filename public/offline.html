@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendease - Offline</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+      background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      padding: 20px;
+    }
+    
+    .container {
+      text-align: center;
+      max-width: 500px;
+    }
+    
+    .icon {
+      font-size: 80px;
+      margin-bottom: 20px;
+    }
+    
+    h1 {
+      font-size: 32px;
+      margin-bottom: 16px;
+    }
+    
+    p {
+      font-size: 18px;
+      margin-bottom: 32px;
+      opacity: 0.9;
+    }
+    
+    .retry-btn {
+      background: white;
+      color: #1e3a8a;
+      border: none;
+      padding: 16px 32px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    
+    .retry-btn:hover {
+      transform: scale(1.05);
+    }
+    
+    .features {
+      margin-top: 48px;
+      text-align: left;
+    }
+    
+    .feature {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+      opacity: 0.9;
+    }
+    
+    .feature-icon {
+      margin-right: 12px;
+      font-size: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">📡</div>
+    <h1>You're Offline</h1>
+    <p>It looks like you've lost your internet connection. Some features may not be available right now.</p>
+    
+    <button class="retry-btn" onclick="location.reload()">
+      Try Again
+    </button>
+    
+    <div class="features">
+      <h2 style="margin-bottom: 24px;">Available Offline:</h2>
+      <div class="feature">
+        <span class="feature-icon">📅</span>
+        <span>View cached class schedule</span>
+      </div>
+      <div class="feature">
+        <span class="feature-icon">📊</span>
+        <span>Check saved attendance records</span>
+      </div>
+      <div class="feature">
+        <span class="feature-icon">📱</span>
+        <span>Access downloaded certificates</span>
+      </div>
+      <div class="feature">
+        <span class="feature-icon">✅</span>
+        <span>Mark attendance (syncs when online)</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
