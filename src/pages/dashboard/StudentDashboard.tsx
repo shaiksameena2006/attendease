@@ -1,76 +1,140 @@
-import { BookOpen, Calendar, Trophy, TrendingUp, CheckSquare, CalendarDays, Users, FileText } from "lucide-react";
+import { BookOpen, Calendar, Trophy, TrendingUp, CheckSquare, CalendarDays, FileText } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { NotificationPanel } from "@/components/dashboard/NotificationPanel";
 import { QuickActionGrid } from "@/components/dashboard/QuickActionGrid";
 import { SchedulePreview } from "@/components/dashboard/SchedulePreview";
 import { ChartPlaceholder } from "@/components/dashboard/ChartPlaceholder";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export function StudentDashboard() {
-  const mockNotifications = [
-    {
-      id: "1",
-      type: "alert" as const,
-      title: "Class Starting Soon",
-      message: "Data Structures - Room 301 in 15 minutes",
-      time: "10 mins ago",
-      isRead: false,
-    },
-    {
-      id: "2",
-      type: "success" as const,
-      title: "Attendance Marked",
-      message: "Your attendance for Web Development has been recorded",
-      time: "1 hour ago",
-      isRead: false,
-    },
-    {
-      id: "3",
-      type: "info" as const,
-      title: "New Event",
-      message: "Tech Fest 2024 registration is now open",
-      time: "2 hours ago",
-      isRead: true,
-    },
-  ];
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [profile, setProfile] = useState<any>(null);
+  const [stats, setStats] = useState({ attendance: 0, classes: 0, events: 0, housePoints: 0 });
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [schedule, setSchedule] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const mockSchedule = [
-    {
-      id: "1",
-      subject: "Data Structures",
-      time: "09:00 AM",
-      duration: "1 hour",
-      room: "Room 301",
-      faculty: "Dr. Sarah Johnson",
-      status: "ongoing" as const,
-    },
-    {
-      id: "2",
-      subject: "Web Development",
-      time: "11:00 AM",
-      duration: "2 hours",
-      room: "Lab 102",
-      faculty: "Prof. Michael Chen",
-      status: "upcoming" as const,
-    },
-    {
-      id: "3",
-      subject: "Database Management",
-      time: "02:00 PM",
-      duration: "1.5 hours",
-      room: "Room 205",
-      faculty: "Dr. Emily Brown",
-      status: "upcoming" as const,
-    },
-  ];
+  useEffect(() => {
+    if (user) {
+      fetchStudentData();
+    }
+  }, [user]);
+
+  const fetchStudentData = async () => {
+    try {
+      // Fetch profile
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user?.id)
+        .single();
+      
+      setProfile(profileData);
+
+      // Fetch attendance stats
+      const { data: attendanceData } = await supabase
+        .from("attendance_records")
+        .select("*")
+        .eq("student_id", user?.id);
+      
+      const presentCount = attendanceData?.filter(r => r.status === "present").length || 0;
+      const totalCount = attendanceData?.length || 1;
+      const attendancePercentage = Math.round((presentCount / totalCount) * 100);
+
+      // Fetch enrolled classes
+      const { data: enrolledClasses } = await supabase
+        .from("class_enrollments")
+        .select("class_id")
+        .eq("student_id", user?.id);
+      
+      // Fetch today's timetable
+      const today = new Date().getDay();
+      const { data: todaySchedule } = await supabase
+        .from("timetable_entries")
+        .select(`
+          *,
+          classes!inner (
+            id,
+            faculty_id,
+            subjects (name)
+          ),
+          rooms (room_number, building)
+        `)
+        .in("class_id", enrolledClasses?.map(e => e.class_id) || [])
+        .eq("day_of_week", today)
+        .eq("is_active", true)
+        .order("start_time");
+
+      // Get faculty names separately
+      const facultyIds = [...new Set(todaySchedule?.map(t => t.classes?.faculty_id).filter(Boolean))];
+      const { data: facultyProfiles } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", facultyIds);
+
+      const facultyMap = new Map(facultyProfiles?.map(p => [p.id, p.full_name]));
+
+      const formattedSchedule = todaySchedule?.map(entry => ({
+        id: entry.id,
+        subject: entry.classes?.subjects?.name || "Class",
+        time: entry.start_time,
+        duration: "1 hour",
+        room: `${entry.rooms?.building || ""} ${entry.rooms?.room_number || ""}`.trim(),
+        faculty: facultyMap.get(entry.classes?.faculty_id) || "Faculty",
+        status: new Date().getHours() >= parseInt(entry.start_time.split(":")[0]) ? "ongoing" : "upcoming"
+      })) || [];
+
+      setSchedule(formattedSchedule);
+
+      // Fetch registered events
+      const { data: registeredEvents } = await supabase
+        .from("event_registrations")
+        .select("event_id")
+        .eq("user_id", user?.id);
+
+      // Fetch house points
+      const { data: houseData } = await supabase
+        .from("house_memberships")
+        .select(`
+          houses (
+            id,
+            name,
+            total_points
+          )
+        `)
+        .eq("user_id", user?.id)
+        .single();
+
+      setStats({
+        attendance: attendancePercentage,
+        classes: formattedSchedule.length,
+        events: registeredEvents?.length || 0,
+        housePoints: houseData?.houses?.total_points || 0
+      });
+
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching student data:", error);
+      setLoading(false);
+    }
+  };
 
   const quickActions = [
-    { id: "1", label: "Mark Attendance", icon: CheckSquare, onClick: () => console.log("Mark Attendance") },
-    { id: "2", label: "View Timetable", icon: Calendar, onClick: () => console.log("View Timetable") },
-    { id: "3", label: "Browse Events", icon: CalendarDays, onClick: () => console.log("Browse Events") },
-    { id: "4", label: "My Certificates", icon: FileText, onClick: () => console.log("My Certificates") },
+    { id: "1", label: "Mark Attendance", icon: CheckSquare, onClick: () => navigate("/student/attendance") },
+    { id: "2", label: "View Timetable", icon: Calendar, onClick: () => navigate("/student/timetable") },
+    { id: "3", label: "Browse Events", icon: CalendarDays, onClick: () => navigate("/events") },
+    { id: "4", label: "My Certificates", icon: FileText, onClick: () => navigate("/student/certificates") },
   ];
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-96">Loading...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -79,11 +143,16 @@ export function StudentDashboard() {
         <CardContent className="p-6">
           <div className="flex items-center gap-4">
             <Avatar className="w-16 h-16 border-2 border-primary">
-              <AvatarFallback className="bg-primary text-primary-foreground text-xl">JD</AvatarFallback>
+              <AvatarImage src={profile?.avatar_url} />
+              <AvatarFallback className="bg-primary text-primary-foreground text-xl">
+                {profile?.full_name?.split(" ").map((n: string) => n[0]).join("") || "ST"}
+              </AvatarFallback>
             </Avatar>
             <div>
-              <h1 className="text-2xl font-bold">Welcome back, John!</h1>
-              <p className="text-muted-foreground">Computer Science Engineering - Year 3</p>
+              <h1 className="text-2xl font-bold">Welcome back, {profile?.full_name || "Student"}!</h1>
+              <p className="text-muted-foreground">
+                {profile?.department || "Department"} {profile?.year ? `- Year ${profile.year}` : ""}
+              </p>
             </div>
           </div>
         </CardContent>
@@ -93,25 +162,23 @@ export function StudentDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Attendance"
-          value="87%"
+          value={`${stats.attendance}%`}
           icon={CheckSquare}
-          trend={{ value: 5, isPositive: true }}
         />
         <StatCard
-          title="Upcoming Classes"
-          value="3"
+          title="Today's Classes"
+          value={stats.classes.toString()}
           icon={BookOpen}
         />
         <StatCard
-          title="Pending Events"
-          value="5"
+          title="Registered Events"
+          value={stats.events.toString()}
           icon={CalendarDays}
         />
         <StatCard
           title="House Points"
-          value="245"
+          value={stats.housePoints.toString()}
           icon={Trophy}
-          trend={{ value: 12, isPositive: true }}
         />
       </div>
 
@@ -119,12 +186,12 @@ export function StudentDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Schedule Preview - 2 columns */}
         <div className="lg:col-span-2">
-          <SchedulePreview sessions={mockSchedule} />
+          <SchedulePreview sessions={schedule} />
         </div>
 
         {/* Notifications - 1 column */}
         <div>
-          <NotificationPanel notifications={mockNotifications} />
+          <NotificationPanel notifications={notifications} />
         </div>
       </div>
 
@@ -152,20 +219,9 @@ export function StudentDashboard() {
             <button className="text-sm text-primary hover:underline">View All</button>
           </div>
           <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex gap-4 p-3 rounded-lg hover:bg-accent transition-colors">
-                <div className="w-20 h-20 bg-muted rounded-lg flex items-center justify-center">
-                  <BookOpen className="w-8 h-8 text-muted-foreground" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold mb-1">Campus Update {i}</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor.
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-2">{i} hours ago</p>
-                </div>
-              </div>
-            ))}
+            <p className="text-sm text-muted-foreground text-center py-8">
+              No campus news available at the moment
+            </p>
           </div>
         </CardContent>
       </Card>

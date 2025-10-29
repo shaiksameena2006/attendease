@@ -1,23 +1,116 @@
-import { Users, CheckSquare, TrendingUp, Calendar, Search, Filter } from "lucide-react";
+import { Users, CheckSquare, Calendar, Search, Filter } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
+import { FacultyAttendanceSession } from "@/components/attendance/FacultyAttendanceSession";
 
 export default function ClassManagement() {
-  const classes = [
-    { name: "Web Development (Section A)", year: "3rd Year", students: 42, avgAttendance: 92 },
-    { name: "Database Management (Section B)", year: "2nd Year", students: 38, avgAttendance: 87 },
-    { name: "Software Engineering (Section A)", year: "4th Year", students: 35, avgAttendance: 89 },
-  ];
+  const { user } = useAuth();
+  const [classes, setClasses] = useState<any[]>([]);
+  const [students, setStudents] = useState<any[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  const recentSessions = [
-    { class: "Web Development", date: "2024-01-15", time: "11:00 AM", attendance: "40/42", topic: "React Hooks" },
-    { class: "Database Management", date: "2024-01-15", time: "02:00 PM", attendance: "35/38", topic: "SQL Joins" },
-    { class: "Software Engineering", date: "2024-01-14", time: "03:00 PM", attendance: "33/35", topic: "Agile Methods" },
-  ];
+  useEffect(() => {
+    if (user) {
+      fetchFacultyData();
+    }
+  }, [user]);
+
+  const fetchFacultyData = async () => {
+    try {
+      // Fetch faculty classes
+      const { data: classesData } = await supabase
+        .from("classes")
+        .select(`
+          *,
+          subjects (name),
+          class_enrollments (count)
+        `)
+        .eq("faculty_id", user?.id);
+
+      // For each class, calculate average attendance
+      const classesWithStats = await Promise.all(
+        (classesData || []).map(async (cls) => {
+          const { data: enrollments } = await supabase
+            .from("class_enrollments")
+            .select("student_id")
+            .eq("class_id", cls.id);
+
+          const studentIds = enrollments?.map(e => e.student_id) || [];
+
+          // Get attendance records for this class
+          const { data: sessions } = await supabase
+            .from("attendance_sessions")
+            .select("id")
+            .eq("class_id", cls.id);
+
+          const sessionIds = sessions?.map(s => s.id) || [];
+
+          if (sessionIds.length > 0) {
+            const { data: records } = await supabase
+              .from("attendance_records")
+              .select("status")
+              .in("session_id", sessionIds)
+              .in("student_id", studentIds);
+
+            const presentCount = records?.filter(r => r.status === "present").length || 0;
+            const totalCount = records?.length || 1;
+            const avgAttendance = Math.round((presentCount / totalCount) * 100);
+
+            return {
+              ...cls,
+              students: studentIds.length,
+              avgAttendance,
+            };
+          }
+
+          return {
+            ...cls,
+            students: studentIds.length,
+            avgAttendance: 0,
+          };
+        })
+      );
+
+      setClasses(classesWithStats);
+
+      // Fetch all students from all classes
+      const allClassIds = classesData?.map(c => c.id) || [];
+      const { data: allStudents } = await supabase
+        .from("class_enrollments")
+        .select(`
+          *,
+          profiles (full_name, email),
+          classes (
+            subjects (name)
+          )
+        `)
+        .in("class_id", allClassIds);
+
+      setStudents(allStudents || []);
+      setLoading(false);
+    } catch (error) {
+      console.error("Error fetching faculty data:", error);
+      setLoading(false);
+    }
+  };
+
+  const filteredStudents = students.filter(s =>
+    s.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    s.profiles?.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-96">Loading...</div>;
+  }
+
 
   return (
     <div className="space-y-6">
@@ -26,11 +119,10 @@ export default function ClassManagement() {
           <h1 className="text-3xl font-bold">Class Management</h1>
           <p className="text-muted-foreground mt-2">Manage your classes and student roster</p>
         </div>
-        <Button>
-          <CheckSquare className="w-4 h-4 mr-2" />
-          Mark Attendance
-        </Button>
       </div>
+
+      {/* Bluetooth Attendance Session */}
+      <FacultyAttendanceSession />
 
       {/* Class Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -43,8 +135,10 @@ export default function ClassManagement() {
                     <Users className="w-6 h-6 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold">{classInfo.name}</h3>
-                    <p className="text-sm text-muted-foreground">{classInfo.year}</p>
+                    <h3 className="font-semibold">{classInfo.subjects?.name || "Class"}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Year {classInfo.year} - Section {classInfo.section || "A"}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -70,35 +164,6 @@ export default function ClassManagement() {
         ))}
       </div>
 
-      {/* Recent Sessions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Sessions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {recentSessions.map((session, index) => (
-              <div key={index} className="flex items-center justify-between p-4 rounded-lg border hover:shadow-md transition-shadow">
-                <div className="flex-1">
-                  <h4 className="font-semibold">{session.class}</h4>
-                  <p className="text-sm text-muted-foreground">{session.topic}</p>
-                  <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      {session.date}
-                    </span>
-                    <span>{session.time}</span>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <Badge variant="secondary">{session.attendance}</Badge>
-                  <p className="text-xs text-muted-foreground mt-1">Present</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Student List */}
       <Card>
@@ -108,7 +173,12 @@ export default function ClassManagement() {
             <div className="flex gap-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input placeholder="Search students..." className="pl-10 w-64" />
+                <Input 
+                  placeholder="Search students..." 
+                  className="pl-10 w-64"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
               <Button variant="outline" size="icon">
                 <Filter className="w-4 h-4" />
@@ -118,31 +188,27 @@ export default function ClassManagement() {
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {[
-              { name: "John Doe", rollNo: "CS2024001", class: "Web Development", attendance: 95 },
-              { name: "Jane Smith", rollNo: "CS2024002", class: "Web Development", attendance: 92 },
-              { name: "Mike Johnson", rollNo: "CS2024003", class: "Database Management", attendance: 88 },
-              { name: "Sarah Williams", rollNo: "CS2024004", class: "Database Management", attendance: 90 },
-              { name: "Tom Brown", rollNo: "CS2024005", class: "Software Engineering", attendance: 87 },
-            ].map((student, index) => (
-              <div key={index} className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent transition-colors cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <Avatar>
-                    <AvatarFallback>{student.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium">{student.name}</p>
-                    <p className="text-sm text-muted-foreground">{student.rollNo} • {student.class}</p>
+            {filteredStudents.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">No students found</p>
+            ) : (
+              filteredStudents.map((student, index) => (
+                <div key={index} className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent transition-colors cursor-pointer">
+                  <div className="flex items-center gap-3">
+                    <Avatar>
+                      <AvatarFallback>
+                        {student.profiles?.full_name?.split(' ').map((n: string) => n[0]).join('') || "ST"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium">{student.profiles?.full_name || "Student"}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {student.profiles?.email} • {student.classes?.subjects?.name || "Class"}
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <Badge variant={student.attendance >= 90 ? "default" : student.attendance >= 75 ? "secondary" : "destructive"}>
-                    {student.attendance}%
-                  </Badge>
-                  <p className="text-xs text-muted-foreground mt-1">Attendance</p>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </CardContent>
       </Card>
