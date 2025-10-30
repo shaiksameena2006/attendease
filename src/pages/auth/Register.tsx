@@ -124,9 +124,9 @@ export default function Register() {
     setIsLoading(false);
     toast({
       title: "Registration successful",
-      description: "Please check your email to verify your account.",
+      description: "You can now sign in with your credentials.",
     });
-    navigate("/auth/verification-pending");
+    navigate("/auth/login");
   };
 
   return (
