@@ -16,6 +16,7 @@ import Profile from "./pages/Profile";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ResetPassword from "./pages/auth/ResetPassword";
+import VerificationPending from "./pages/auth/VerificationPending";
 import NotFound from "./pages/NotFound";
 
 // Student pages
@@ -62,6 +63,7 @@ const App = () => (
               <Route path="/auth/login" element={<Login />} />
               <Route path="/auth/register" element={<Register />} />
               <Route path="/auth/reset-password" element={<ResetPassword />} />
+              <Route path="/auth/verification-pending" element={<VerificationPending />} />
               
               {/* App routes with AppShell and ProtectedRoute */}
               <Route path="/" element={<ProtectedRoute><AppShell><Index /></AppShell></ProtectedRoute>} />
