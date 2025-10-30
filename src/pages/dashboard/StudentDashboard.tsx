@@ -1,4 +1,4 @@
-import { BookOpen, Calendar, Trophy, TrendingUp, CheckSquare, CalendarDays, FileText } from "lucide-react";
+import { BookOpen, Calendar, Trophy, TrendingUp, CheckSquare, CalendarDays, FileText, Clock } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { NotificationPanel } from "@/components/dashboard/NotificationPanel";
 import { QuickActionGrid } from "@/components/dashboard/QuickActionGrid";
@@ -6,6 +6,8 @@ import { SchedulePreview } from "@/components/dashboard/SchedulePreview";
 import { ChartPlaceholder } from "@/components/dashboard/ChartPlaceholder";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { AttendanceNotification } from "@/components/attendance/AttendanceNotification";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
@@ -138,6 +140,9 @@ export function StudentDashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Attendance Notification Component */}
+      <AttendanceNotification />
+
       {/* Welcome Header */}
       <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-primary/20">
         <CardContent className="p-6">
@@ -145,15 +150,21 @@ export function StudentDashboard() {
             <Avatar className="w-16 h-16 border-2 border-primary">
               <AvatarImage src={profile?.avatar_url} />
               <AvatarFallback className="bg-primary text-primary-foreground text-xl">
-                {profile?.full_name?.split(" ").map((n: string) => n[0]).join("") || "ST"}
+                {profile?.full_name?.split(" ").map((n: string) => n[0]).join("") || "U"}
               </AvatarFallback>
             </Avatar>
-            <div>
-              <h1 className="text-2xl font-bold">Welcome back, {profile?.full_name || "Student"}!</h1>
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold">Hello, {profile?.full_name || "Student"}!</h1>
               <p className="text-muted-foreground">
-                {profile?.department || "Department"} {profile?.year ? `- Year ${profile.year}` : ""}
+                {profile?.department ? `${profile.department} - Year ${profile.year || ''}` : 'Welcome to Attendease'}
               </p>
             </div>
+            {profile?.branch && (
+              <Badge variant="secondary" className="h-fit flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                {profile.branch}
+              </Badge>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -198,33 +209,20 @@ export function StudentDashboard() {
       {/* Quick Actions */}
       <QuickActionGrid actions={quickActions} columns={4} />
 
-      {/* Analytics Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <ChartPlaceholder 
-          title="Attendance Trends" 
-          description="Your attendance over the last 6 months"
-          showTrend
-        />
-        <ChartPlaceholder 
-          title="Performance Analytics" 
-          description="Subject-wise performance breakdown"
-        />
-      </div>
-
-      {/* News Feed Preview */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold">Campus News</h3>
-            <button className="text-sm text-primary hover:underline">View All</button>
-          </div>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground text-center py-8">
-              No campus news available at the moment
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Analytics - Only show if there's data */}
+      {stats.attendance > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <ChartPlaceholder 
+            title="Attendance Trends" 
+            description="Your attendance over the last 30 days"
+            showTrend
+          />
+          <ChartPlaceholder 
+            title="Performance Analytics" 
+            description="Subject-wise performance overview"
+          />
+        </div>
+      )}
     </div>
   );
 }

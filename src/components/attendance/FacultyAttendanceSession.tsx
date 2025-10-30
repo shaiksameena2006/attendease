@@ -53,6 +53,13 @@ export function FacultyAttendanceSession() {
       const now = new Date();
       const endTime = new Date(now.getTime() + 2 * 60 * 60 * 1000); // 2 hours
 
+      // Get class details for notification
+      const { data: classData } = await supabase
+        .from("classes")
+        .select("*, subjects(name)")
+        .eq("id", selectedClass)
+        .single();
+
       const { data, error } = await supabase
         .from("attendance_sessions")
         .insert({
@@ -70,8 +77,8 @@ export function FacultyAttendanceSession() {
 
       setActiveSession(data);
       toast({
-        title: "Session Started",
-        description: "Students can now mark their attendance using Bluetooth",
+        title: "Taking Attendance",
+        description: `Bluetooth signal active for ${classData?.subjects?.name || 'class'}. Students will be notified.`,
       });
     } catch (error) {
       console.error("Error starting session:", error);
