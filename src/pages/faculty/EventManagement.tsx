@@ -7,32 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 
 export default function EventManagement() {
-  const myEvents = [
-    { 
-      name: "React Workshop", 
-      date: "2024-01-20", 
-      time: "02:00 PM",
-      venue: "Lab 102", 
-      registered: 45, 
-      capacity: 50,
-      status: "approved" 
-    },
-    { 
-      name: "Tech Talk Series", 
-      date: "2024-01-25", 
-      time: "04:00 PM",
-      venue: "Auditorium", 
-      registered: 120, 
-      capacity: 150,
-      status: "pending" 
-    },
-  ];
-
-  const attendees = [
-    { name: "John Doe", rollNo: "CS2024001", status: "present" },
-    { name: "Jane Smith", rollNo: "CS2024002", status: "present" },
-    { name: "Mike Johnson", rollNo: "CS2024003", status: "absent" },
-  ];
+  const myEvents: any[] = [];
+  const attendees: any[] = [];
 
   return (
     <div className="space-y-6">
@@ -55,7 +31,15 @@ export default function EventManagement() {
         </TabsList>
 
         <TabsContent value="my-events" className="space-y-4">
-          {myEvents.map((event, index) => (
+          {myEvents.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center justify-center py-16">
+                <Calendar className="w-12 h-12 text-muted-foreground mb-4" />
+                <p className="text-sm text-muted-foreground">No events created yet</p>
+              </CardContent>
+            </Card>
+          ) : (
+            myEvents.map((event, index) => (
             <Card key={index}>
               <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-4">
@@ -95,7 +79,8 @@ export default function EventManagement() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            ))
+          )}
         </TabsContent>
 
         <TabsContent value="create" className="space-y-6">
@@ -152,34 +137,45 @@ export default function EventManagement() {
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardContent className="p-6 text-center">
-                <p className="text-sm text-muted-foreground mb-2">Total Events</p>
-                <p className="text-3xl font-bold">12</p>
+          {myEvents.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center justify-center py-16">
+                <Calendar className="w-12 h-12 text-muted-foreground mb-4" />
+                <p className="text-sm text-muted-foreground">Create events to see analytics</p>
               </CardContent>
             </Card>
-            <Card>
-              <CardContent className="p-6 text-center">
-                <p className="text-sm text-muted-foreground mb-2">Total Participants</p>
-                <p className="text-3xl font-bold">456</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6 text-center">
-                <p className="text-sm text-muted-foreground mb-2">Avg Attendance</p>
-                <p className="text-3xl font-bold">92%</p>
-              </CardContent>
-            </Card>
-          </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card>
+                  <CardContent className="p-6 text-center">
+                    <p className="text-sm text-muted-foreground mb-2">Total Events</p>
+                    <p className="text-3xl font-bold">{myEvents.length}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-6 text-center">
+                    <p className="text-sm text-muted-foreground mb-2">Total Participants</p>
+                    <p className="text-3xl font-bold">{myEvents.reduce((acc, e) => acc + e.registered, 0)}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-6 text-center">
+                    <p className="text-sm text-muted-foreground mb-2">Avg Registration</p>
+                    <p className="text-3xl font-bold">
+                      {Math.round(myEvents.reduce((acc, e) => acc + ((e.registered / e.capacity) * 100), 0) / myEvents.length)}%
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Event Performance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {myEvents.map((event, index) => (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Event Performance</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {myEvents.map((event, index) => (
                   <div key={index} className="flex items-center justify-between p-4 rounded-lg border">
                     <div>
                       <p className="font-semibold">{event.name}</p>
@@ -189,19 +185,22 @@ export default function EventManagement() {
                       <p className="font-semibold">{Math.round((event.registered / event.capacity) * 100)}%</p>
                       <p className="text-xs text-muted-foreground">Registration</p>
                     </div>
+                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Attendees</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {attendees.map((attendee, index) => (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Attendees</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {attendees.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">No attendance records yet</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {attendees.map((attendee, index) => (
                   <div key={index} className="flex items-center justify-between p-3 rounded-lg border">
                     <div>
                       <p className="font-medium">{attendee.name}</p>
@@ -213,10 +212,13 @@ export default function EventManagement() {
                       <XCircle className="w-5 h-5 text-red-600" />
                     )}
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </>
+          )}
         </TabsContent>
       </Tabs>
     </div>

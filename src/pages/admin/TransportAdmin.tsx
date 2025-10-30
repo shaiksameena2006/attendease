@@ -5,22 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function TransportAdmin() {
-  const routes = [
-    { id: 1, name: "Route 1 - North Campus", buses: 2, stops: 4, active: true },
-    { id: 2, name: "Route 2 - South Campus", buses: 2, stops: 4, active: true },
-    { id: 3, name: "Route 3 - Downtown", buses: 2, stops: 4, active: true },
-  ];
-
-  const buses = [
-    { id: "BUS-001", route: "Route 1", driver: "John Driver", capacity: 40, status: "active" },
-    { id: "BUS-002", route: "Route 1", driver: "Jane Smith", capacity: 40, status: "active" },
-    { id: "BUS-003", route: "Route 2", driver: "Mike Johnson", capacity: 40, status: "maintenance" },
-  ];
-
-  const passes = [
-    { student: "John Doe", passId: "PASS-2024-0156", route: "Route 3", validUntil: "2024-06-30", status: "active" },
-    { student: "Jane Smith", passId: "PASS-2024-0157", route: "Route 1", validUntil: "2024-06-30", status: "active" },
-  ];
+  const routes: any[] = [];
+  const buses: any[] = [];
+  const passes: any[] = [];
 
   return (
     <div className="space-y-6">
@@ -47,7 +34,15 @@ export default function TransportAdmin() {
             </Button>
           </div>
 
-          {routes.map((route) => (
+          {routes.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center justify-center py-16">
+                <MapPin className="w-12 h-12 text-muted-foreground mb-4" />
+                <p className="text-sm text-muted-foreground">No routes configured yet</p>
+              </CardContent>
+            </Card>
+          ) : (
+            routes.map((route) => (
             <Card key={route.id}>
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
@@ -74,7 +69,8 @@ export default function TransportAdmin() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            ))
+          )}
         </TabsContent>
 
         <TabsContent value="buses" className="space-y-4">
@@ -85,7 +81,15 @@ export default function TransportAdmin() {
             </Button>
           </div>
 
-          {buses.map((bus) => (
+          {buses.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center justify-center py-16">
+                <Bus className="w-12 h-12 text-muted-foreground mb-4" />
+                <p className="text-sm text-muted-foreground">No buses configured yet</p>
+              </CardContent>
+            </Card>
+          ) : (
+            buses.map((bus) => (
             <Card key={bus.id}>
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
@@ -113,7 +117,8 @@ export default function TransportAdmin() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            ))
+          )}
         </TabsContent>
 
         <TabsContent value="passes" className="space-y-4">
@@ -125,8 +130,11 @@ export default function TransportAdmin() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {passes.map((pass, index) => (
+              {passes.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">No bus passes issued yet</p>
+              ) : (
+                <div className="space-y-3">
+                  {passes.map((pass, index) => (
                   <div key={index} className="flex items-center justify-between p-4 rounded-lg border">
                     <div>
                       <p className="font-medium">{pass.student}</p>
@@ -141,8 +149,9 @@ export default function TransportAdmin() {
                       </p>
                     </div>
                   </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

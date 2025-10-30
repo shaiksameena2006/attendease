@@ -6,9 +6,29 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
+  const { user } = useAuth();
+  const [profile, setProfile] = useState<any>(null);
+
+  useEffect(() => {
+    if (user) {
+      fetchProfile();
+    }
+  }, [user]);
+
+  const fetchProfile = async () => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user?.id)
+      .single();
+    setProfile(data);
+  };
 
   return (
     <div className="space-y-6">
@@ -36,15 +56,15 @@ export default function SettingsPage() {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label>Full Name</Label>
-                <Input defaultValue="John Doe" />
+                <Input defaultValue={profile?.full_name || ""} />
               </div>
               <div className="space-y-2">
                 <Label>Email</Label>
-                <Input defaultValue="john.doe@university.edu" disabled />
+                <Input defaultValue={profile?.email || ""} disabled />
               </div>
               <div className="space-y-2">
                 <Label>Phone Number</Label>
-                <Input defaultValue="+91 98765 43210" />
+                <Input defaultValue={profile?.contact || ""} />
               </div>
               <Button>Save Changes</Button>
             </CardContent>

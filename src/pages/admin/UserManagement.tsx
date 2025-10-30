@@ -7,15 +7,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function UserManagement() {
-  const pendingUsers = [
-    { name: "John Doe", email: "john@university.edu", role: "Student", date: "2024-01-15" },
-    { name: "Jane Smith", email: "jane@university.edu", role: "Faculty", date: "2024-01-14" },
-  ];
-
-  const allUsers = [
-    { name: "Mike Wilson", email: "mike@university.edu", role: "Student", status: "Active" },
-    { name: "Sarah Johnson", email: "sarah@university.edu", role: "Faculty", status: "Active" },
-  ];
+  const pendingUsers: any[] = [];
+  const allUsers: any[] = [];
 
   return (
     <div className="space-y-6">
@@ -33,7 +26,15 @@ export default function UserManagement() {
         </TabsList>
 
         <TabsContent value="pending" className="space-y-4">
-          {pendingUsers.map((user, index) => (
+          {pendingUsers.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center justify-center py-16">
+                <UserCheck className="w-12 h-12 text-muted-foreground mb-4" />
+                <p className="text-sm text-muted-foreground">No pending approvals</p>
+              </CardContent>
+            </Card>
+          ) : (
+            pendingUsers.map((user, index) => (
             <Card key={index}>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
@@ -60,7 +61,8 @@ export default function UserManagement() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            ))
+          )}
         </TabsContent>
 
         <TabsContent value="all" className="space-y-4">
@@ -68,7 +70,15 @@ export default function UserManagement() {
             <Input placeholder="Search users..." className="flex-1" />
             <Button variant="outline"><Filter className="w-4 h-4" /></Button>
           </div>
-          {allUsers.map((user, index) => (
+          {allUsers.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center justify-center py-16">
+                <Users className="w-12 h-12 text-muted-foreground mb-4" />
+                <p className="text-sm text-muted-foreground">No users found</p>
+              </CardContent>
+            </Card>
+          ) : (
+            allUsers.map((user, index) => (
             <Card key={index}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
@@ -85,7 +95,8 @@ export default function UserManagement() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            ))
+          )}
         </TabsContent>
       </Tabs>
     </div>

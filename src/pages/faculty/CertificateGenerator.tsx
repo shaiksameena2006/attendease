@@ -7,24 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function CertificateGenerator() {
-  const templates = [
-    { id: 1, name: "Workshop Completion", category: "Academic", uses: 45 },
-    { id: 2, name: "Project Excellence", category: "Achievement", uses: 23 },
-    { id: 3, name: "Seminar Participation", category: "Participation", uses: 67 },
-    { id: 4, name: "Research Paper", category: "Research", uses: 12 },
-  ];
-
-  const recentCertificates = [
-    { student: "John Doe", template: "Workshop Completion", status: "approved", date: "2024-01-15" },
-    { student: "Jane Smith", template: "Project Excellence", status: "pending", date: "2024-01-14" },
-    { student: "Mike Johnson", template: "Seminar Participation", status: "approved", date: "2024-01-14" },
-  ];
-
-  const selectedStudents = [
-    { name: "John Doe", rollNo: "CS2024001", class: "Web Development" },
-    { name: "Jane Smith", rollNo: "CS2024002", class: "Web Development" },
-    { name: "Mike Johnson", rollNo: "CS2024003", class: "Database Management" },
-  ];
+  const templates: any[] = [];
+  const recentCertificates: any[] = [];
+  const selectedStudents: any[] = [];
 
   return (
     <div className="space-y-6">
@@ -47,8 +32,16 @@ export default function CertificateGenerator() {
         </TabsList>
 
         <TabsContent value="templates" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {templates.map((template) => (
+          {templates.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center justify-center py-16">
+                <Award className="w-12 h-12 text-muted-foreground mb-4" />
+                <p className="text-sm text-muted-foreground">No certificate templates available</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {templates.map((template) => (
               <Card key={template.id} className="hover:shadow-md transition-shadow cursor-pointer">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
@@ -68,8 +61,9 @@ export default function CertificateGenerator() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="generate" className="space-y-6">
@@ -79,8 +73,11 @@ export default function CertificateGenerator() {
               <CardTitle>Step 1: Select Template</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {templates.map((template) => (
+              {templates.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">No templates available</p>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {templates.map((template) => (
                   <button
                     key={template.id}
                     className="p-4 rounded-lg border hover:border-primary hover:bg-accent transition-colors text-left"
@@ -88,8 +85,9 @@ export default function CertificateGenerator() {
                     <Award className="w-6 h-6 text-primary mb-2" />
                     <p className="font-medium text-sm">{template.name}</p>
                   </button>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -110,8 +108,12 @@ export default function CertificateGenerator() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                {selectedStudents.map((student, index) => (
+              {selectedStudents.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">No students selected</p>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    {selectedStudents.map((student, index) => (
                   <div key={index} className="flex items-center justify-between p-3 rounded-lg border bg-accent">
                     <div className="flex items-center gap-3">
                       <input type="checkbox" defaultChecked className="w-4 h-4" />
@@ -125,12 +127,14 @@ export default function CertificateGenerator() {
                     </div>
                     <CheckCircle className="w-5 h-5 text-emerald-600" />
                   </div>
-                ))}
-              </div>
-              <div className="mt-4 flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">{selectedStudents.length} students selected</p>
-                <Button variant="outline" size="sm">Select from Class</Button>
-              </div>
+                    ))}
+                  </div>
+                  <div className="mt-4 flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">{selectedStudents.length} students selected</p>
+                    <Button variant="outline" size="sm">Select from Class</Button>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -171,7 +175,15 @@ export default function CertificateGenerator() {
         </TabsContent>
 
         <TabsContent value="history" className="space-y-4">
-          {recentCertificates.map((cert, index) => (
+          {recentCertificates.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center justify-center py-16">
+                <Award className="w-12 h-12 text-muted-foreground mb-4" />
+                <p className="text-sm text-muted-foreground">No certificates issued yet</p>
+              </CardContent>
+            </Card>
+          ) : (
+            recentCertificates.map((cert, index) => (
             <Card key={index}>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
@@ -201,7 +213,8 @@ export default function CertificateGenerator() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            ))
+          )}
         </TabsContent>
       </Tabs>
     </div>
