@@ -7,15 +7,13 @@ type Role = "student" | "faculty" | "admin";
 interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles?: Role[];
-  requireApproval?: boolean;
 }
 
 export function ProtectedRoute({ 
   children, 
-  allowedRoles,
-  requireApproval = true 
+  allowedRoles
 }: ProtectedRouteProps) {
-  const { user, role, isApproved, isLoading } = useAuth();
+  const { user, role, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -27,10 +25,6 @@ export function ProtectedRoute({
 
   if (!user) {
     return <Navigate to="/auth/login" replace />;
-  }
-
-  if (requireApproval && !isApproved) {
-    return <Navigate to="/auth/verification-pending" replace />;
   }
 
   if (allowedRoles && role && !allowedRoles.includes(role)) {
