@@ -7,12 +7,24 @@ import { componentTagger } from "lovable-tagger";
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
-    port: 8080,
+    port: 8080, // 👈 Frontend runs here (http://localhost:8080)
+    proxy: {
+      // 👇 Forward any request starting with /api to Flask backend (port 5000)
+      "/api": {
+        target: "http://127.0.0.1:5000",
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
-  plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  plugins: [
+    react(),
+    mode === "development" && componentTagger(),
+  ].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
 }));
+
