@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>BLE Attendance Scanner</title>
+  <style>
+    /* 🌈 Overall layout */
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: linear-gradient(135deg, #3A509D, #2C3A75);
+      color: #FFFFFF;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    /* 🧊 Card container */
+    .container {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(12px);
+      padding: 40px;
+      border-radius: 20px;
+      width: 90%;
+      max-width: 600px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+      text-align: center;
+      animation: fadeIn 0.6s ease-in-out;
+      color: #FFFFFF;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 📡 Title */
+    h2 {
+      font-size: 28px;
+      margin-bottom: 10px;
+      color: #FFFFFF;
+    }
+
+    p {
+      color: #E0E6FF;
+      font-size: 15px;
+      margin-bottom: 25px;
+    }
+
+    /* 🔘 Button */
+    button {
+      background: #FFFFFF;
+      color: #3A509D;
+      border: none;
+      border-radius: 25px;
+      padding: 12px 30px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+    }
+
+    button:hover {
+      background: #E0E6FF;
+      color: #2C3A75;
+      transform: scale(1.05);
+    }
+
+    /* 📋 List */
+    ul {
+      list-style: none;
+      padding: 0;
+      margin-top: 25px;
+      text-align: left;
+      max-height: 250px;
+      overflow-y: auto;
+    }
+
+    li {
+      background: rgba(255, 255, 255, 0.25);
+      margin-bottom: 10px;
+      padding: 12px 15px;
+      border-radius: 12px;
+      transition: 0.3s;
+      color: #FFFFFF;
+    }
+
+    li:hover {
+      background: rgba(255, 255, 255, 0.35);
+    }
+
+    /* 🔄 Loader animation */
+    .loader {
+      margin-top: 20px;
+      display: none;
+    }
+
+    .dot {
+      height: 12px;
+      width: 12px;
+      margin: 0 5px;
+      background-color: #FFFFFF;
+      border-radius: 50%;
+      display: inline-block;
+      animation: bounce 1.4s infinite ease-in-out both;
+    }
+
+    .dot:nth-child(1) { animation-delay: -0.32s; }
+    .dot:nth-child(2) { animation-delay: -0.16s; }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>📡 BLE Attendance Scanner</h2>
+    <p>Click below to start scanning nearby devices.<br>Make sure students advertise via <b>nRF Connect</b>.</p>
+
+    <button onclick="startScan()">Start Scan</button>
+    <div class="loader" id="loader">
+      <span class="dot"></span>
+      <span class="dot"></span>
+      <span class="dot"></span>
+    </div>
+
+    <h3 style="margin-top:30px;">🧾 Detected Students</h3>
+    <ul id="students"></ul>
+  </div>
+
+  <script>
+    function startScan() {
+      const loader = document.getElementById("loader");
+      const list = document.getElementById("students");
+      list.innerHTML = "";
+      loader.style.display = "block";
+
+      fetch("/start_scan")
+        .then(() => {
+          console.log("Scan started...");
+          setTimeout(loadResults, 16000); // wait 15 seconds + 1 buffer
+        });
+    }
+
+    function loadResults() {
+      const loader = document.getElementById("loader");
+      loader.style.display = "none";
+      fetch("/get_results")
+        .then(res => res.json())
+        .then(data => {
+          const list = document.getElementById("students");
+          list.innerHTML = "";
+          if (Object.keys(data).length === 0) {
+            list.innerHTML = "<li>No 'KGRCET_' devices found 😕</li>";
+            return;
+          }
+          for (const [name, address] of Object.entries(data)) {
+            const li = document.createElement("li");
+            li.textContent = `${name} — ${address}`;
+            list.appendChild(li);
+          }
+        });
+    }
+  </script>
+</body>
+</html>
