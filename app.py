@@ -1,58 +1,51 @@
-from flask import Flask, jsonify
+from flask import Flask, render_template, jsonify
 from flask_cors import CORS
-import threading
 import asyncio
-import random
-import time
+import threading
+from bleak import BleakScanner
 from datetime import datetime
-import os
 
 app = Flask(__name__)
-CORS(app)
+CORS(app)  # ✅ Allows frontend access from port 8080
 
 attendance_file = "attendance_log.txt"
 found_students = {}
 
-# ---------------- SIMULATED BLE SCANNING ---------------- #
-async def simulate_ble_scan():
+# ---------------- BLE SCANNING LOGIC ---------------- #
+async def scan_kgrcet_students():
     global found_students
     found_students = {}
-    print("🧠 Simulating BLE scan for student devices...")
+    print("🔍 Scanning for student BLE devices (prefix: 'KGRCET')...")
 
-    fake_devices = [
-        "KGRCET_SAMEENA",
-        "KGRCET_SUMITH",
-        "KGRCET_VIVEK",
-        "KGRCET_SHIVA",
-        "KGRCET_OMKAR",
-    ]
+    def detection_callback(device, advertisement_data):
+        name = device.name or "Unknown"
+        if name.startswith("KGRCET") and name not in found_students:
+            found_students[name] = device.address
+            time_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            with open(attendance_file, "a", encoding="utf-8") as f:
+                f.write(f"{time_str}, {name}, {device.address}\n")
+            print(f"✅ {name} ({device.address})")
 
-    for name in fake_devices:
-        await asyncio.sleep(random.uniform(1, 3))  # simulate discovery delay
-        found_students[name] = f"AA:BB:CC:{random.randint(10,99)}:{random.randint(10,99)}"
-        time_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        with open(attendance_file, "a", encoding="utf-8") as f:
-            f.write(f"{time_str}, {name}, {found_students[name]}\n")
-        print(f"✅ Found: {name} ({found_students[name]})")
-
-    print("✅ Simulated scan complete.")
+    scanner = BleakScanner(detection_callback)
+    await scanner.start()
+    await asyncio.sleep(15)
+    await scanner.stop()
+    print("📄 Scan complete.")
 
 # ---------------- FLASK ROUTES ---------------- #
 @app.route("/")
 def home():
-    return jsonify({"message": "Flask BLE Attendance API running (simulation mode) ✅"})
+    return jsonify({"message": "Flask server running successfully!"})
 
-@app.route("/start_scan")
+@app.route("/api/start_scan")
 def start_scan():
-    threading.Thread(target=lambda: asyncio.run(simulate_ble_scan())).start()
-    return jsonify({"status": "Simulated scan started"}), 200
+    threading.Thread(target=lambda: asyncio.run(scan_kgrcet_students())).start()
+    return jsonify({"status": "Scan started"}), 200
 
-@app.route("/get_results")
+@app.route("/api/get_results")
 def get_results():
     return jsonify(found_students)
 
 # ---------------- MAIN ---------------- #
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5001))
-    print(f"🚀 Flask backend (Simulation Mode) running on http://127.0.0.1:{port}")
-    app.run(debug=True, port=port)
+    app.run(debug=True, port=5000)
