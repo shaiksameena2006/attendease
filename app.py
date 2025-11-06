@@ -1,10 +1,12 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, jsonify, request
+from flask_cors import CORS
 import asyncio
 import threading
 from bleak import BleakScanner
 from datetime import datetime
 
 app = Flask(__name__)
+CORS(app)  # ✅ Enable frontend requests
 
 attendance_file = "attendance_log.txt"
 found_students = {}
@@ -26,27 +28,32 @@ async def scan_kgrcet_students():
 
     scanner = BleakScanner(detection_callback)
     await scanner.start()
-    await asyncio.sleep(15)   # Scan for 15 seconds
+    await asyncio.sleep(15)  # Scan for 15 seconds
     await scanner.stop()
     print("📄 Scan complete.")
 
-# ---------------- FLASK ROUTES ---------------- #
+# ---------------- API ROUTES ---------------- #
 @app.route("/")
 def home():
-    # ✅ This renders your HTML file from the templates folder
-    return render_template("index.html")
+    return jsonify({"message": "Flask backend is running!"})
 
-@app.route("/start_scan")
+@app.route("/api/start_scan", methods=["GET"])
 def start_scan():
-    # Run BLE scan in a separate thread
-    threading.Thread(target=lambda: asyncio.run(scan_kgrcet_students())).start()
-    return jsonify({"status": "Scan started"}), 200
+    try:
+        threading.Thread(target=lambda: asyncio.run(scan_kgrcet_students())).start()
+        return jsonify({"status": "Scan started"}), 200
+    except Exception as e:
+        print("⚠️ Error in start_scan:", e)
+        return jsonify({"error": str(e)}), 500
 
-@app.route("/get_results")
+@app.route("/api/get_results", methods=["GET"])
 def get_results():
     return jsonify(found_students)
 
 # ---------------- MAIN ---------------- #
 if __name__ == "__main__":
-    app.run(debug=True,port=500)
- 
+    try:
+        print("🚀 Starting Flask backend on http://127.0.0.1:5000")
+        app.run(debug=True, port=5000)
+    except OSError as e:
+        print(f"❌ Failed to start Flask app: {e}")
