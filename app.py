@@ -5,8 +5,8 @@ import threading
 from bleak import BleakScanner
 from datetime import datetime
 
-app = Flask(__name__)
-CORS(app)  # ✅ Allows frontend access from port 8080
+app = Flask(__name__, template_folder="templates")
+CORS(app)  # ✅ Allows frontend (React) to connect from port 8080 or others
 
 attendance_file = "attendance_log.txt"
 found_students = {}
@@ -28,7 +28,7 @@ async def scan_kgrcet_students():
 
     scanner = BleakScanner(detection_callback)
     await scanner.start()
-    await asyncio.sleep(15)
+    await asyncio.sleep(15)  # scan for 15 seconds
     await scanner.stop()
     print("📄 Scan complete.")
 
@@ -36,6 +36,10 @@ async def scan_kgrcet_students():
 @app.route("/")
 def home():
     return jsonify({"message": "Flask server running successfully!"})
+
+@app.route("/scan")
+def scan_page():
+    return render_template("scan.html")
 
 @app.route("/api/start_scan")
 def start_scan():

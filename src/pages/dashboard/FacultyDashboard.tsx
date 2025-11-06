@@ -30,9 +30,6 @@ export function FacultyDashboard() {
   });
   const [loading, setLoading] = useState(true);
 
-  // 👇 new state for attendance popup
-  const [showAttendance, setShowAttendance] = useState(false);
-
   useEffect(() => {
     if (user) {
       fetchFacultyData();
@@ -43,7 +40,6 @@ export function FacultyDashboard() {
     if (!user) return;
 
     try {
-      // Fetch profile
       const { data: profileData } = await supabase
         .from("profiles")
         .select("*")
@@ -52,7 +48,6 @@ export function FacultyDashboard() {
 
       setProfile(profileData);
 
-      // Fetch faculty classes and stats
       const { data: classes } = await supabase
         .from("classes")
         .select("*, class_enrollments(count)")
@@ -85,13 +80,13 @@ export function FacultyDashboard() {
     );
   }
 
-  // 👇 Quick Actions (Mark Attendance now opens BLE scanner)
+  // ✅ Updated quick actions
   const quickActions = [
     {
       id: "1",
       label: "Mark Attendance",
       icon: CheckSquare,
-      onClick: () => window.open("http://127.0.0.1:5000", "_blank"),
+      onClick: () => window.open("http://127.0.0.1:5000/scan", "_blank"),
       variant: "default" as const,
     },
     {
@@ -166,33 +161,7 @@ export function FacultyDashboard() {
         <StatCard title="Pending Tasks" value={stats.pendingTasks.toString()} icon={FileText} />
       </div>
 
-      {/* Attendance Section Popup */}
-      {showAttendance && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl w-[90%] max-w-3xl h-[80vh] flex flex-col">
-            <div className="flex justify-between items-center p-4 border-b">
-              <h2 className="text-lg font-semibold text-gray-800">
-                📡 BLE Attendance Scanner
-              </h2>
-              <button
-                onClick={() => setShowAttendance(false)}
-                className="text-gray-500 hover:text-gray-800"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* iframe showing your Flask app */}
-            <iframe
-              src="http://127.0.0.1:5000"
-              title="BLE Attendance"
-              className="flex-1 w-full rounded-b-2xl"
-            ></iframe>
-          </div>
-        </div>
-      )}
-
-      {/* Charts + Actions */}
+      {/* Charts */}
       {stats.totalStudents > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <ChartPlaceholder
