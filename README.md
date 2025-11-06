@@ -1,4 +1,4 @@
-# Attendease - Campus Management System
+ # Attendease - Campus Management System
 
 A comprehensive Progressive Web App (PWA) designed to revolutionize campus management for colleges and universities.
 
