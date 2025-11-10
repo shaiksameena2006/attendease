@@ -138,8 +138,7 @@ export function FacultyDashboard() {
       id: "1",
       label: "Mark Attendance",
       icon: CheckSquare,
-      // ✅ Correct backend URL
-      onClick: () => window.open("http://127.0.0.1:5001/", "_blank"),
+      onClick: () => window.open("http://127.0.0.1:5001/", "_blank"), // ✅ Correct backend URL
       variant: "default" as const,
     },    
     {
