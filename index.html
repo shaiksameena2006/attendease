@@ -55,10 +55,10 @@
       log.innerHTML = "🔍 Scanning for student BLE devices...";
 
       // Call backend to trigger BLE scan
-      fetch("http://127.0.0.1:5000/api/start_scan")
+      fetch("http://127.0.0.1:5001/api/scan")
         .then(() => {
           let interval = setInterval(async () => {
-            const res = await fetch("http://127.0.0.1:5000/api/get_results");
+            const res = await fetch("http://127.0.0.1:5001/api/view_students");
             const data = await res.json();
             if (Object.keys(data).length > 0) {
               log.innerHTML = "<strong>✅ Devices Found:</strong><br><br>";
