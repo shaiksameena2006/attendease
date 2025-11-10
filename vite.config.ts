@@ -5,17 +5,17 @@ import { componentTagger } from "lovable-tagger";
 
 export default defineConfig(({ mode }) => ({
   server: {
-    host: "::",
-    port: 8080, // ✅ Added missing comma here
-    open: true, // 👈 Automatically opens in browser
+    host: "127.0.0.1",
+    port: 8080,
+    open: true,
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:5001", // 👈 Flask backend
+        target: "http://127.0.0.1:5001",  // ✅ Flask backend
         changeOrigin: true,
         secure: false,
       },
     },
-  },
+  },  
   plugins: [
     react(),
     mode === "development" && componentTagger(),
