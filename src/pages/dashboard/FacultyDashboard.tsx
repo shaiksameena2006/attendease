@@ -136,11 +136,11 @@ export function FacultyDashboard() {
   const quickActions = [
     {
       id: "1",
-      label: scanning ? "Scanning..." : "Mark Attendance",
+      label: "Mark Attendance",
       icon: CheckSquare,
-      onClick: handleMarkAttendance,
+      onClick: () => window.open("http://127.0.0.1:5001/", "_blank"),
       variant: "default" as const,
-    },
+    },    
     {
       id: "2",
       label: "Manage Classes",
