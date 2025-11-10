@@ -111,7 +111,7 @@ export function FacultyDashboard() {
     setFetchingStudents(true);
 
     try {
-      const res = await fetch("http://localhost:5001/api/view_students");
+      const res = await fetch("/api/view_students");
       const data = await res.json();
 
       // Filter today's data only
