@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => ({
     open: true, // 👈 Automatically opens in browser
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:5000", // 👈 Flask backend
+        target: "http://127.0.0.1:5001", // 👈 Flask backend
         changeOrigin: true,
         secure: false,
       },

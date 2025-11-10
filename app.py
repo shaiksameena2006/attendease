@@ -1,39 +1,43 @@
-from flask import Flask, send_from_directory, jsonify
-from flask_cors import CORS
-import os
+from flask import Flask, render_template, send_from_directory, jsonify
+import time
 
 app = Flask(__name__, static_folder="static", template_folder=".")
-CORS(app)  # ✅ Allow your React/Next.js frontend to access this API
 
-# ✅ Serve the main HTML file
+# Serve the main HTML file
 @app.route('/')
 def home():
     return send_from_directory('.', 'index.html')
 
-# ✅ Optional — serve static files (CSS, JS, etc.)
+# ✅ Simulate scanning BLE devices
+@app.route('/api/scan', methods=['GET'])
+def scan_students():
+    # Simulate delay
+    time.sleep(3)
+    
+    # Fake scanned names
+    scanned_students = ["Sameena", "Sumith", "Vivek", "Akhil"]
+    
+    # Save to text file
+    with open("attendance_log.txt", "a") as f:
+        for student in scanned_students:
+            f.write(f"{student}\n")
+    
+    return jsonify({"students": scanned_students})
+
+# ✅ View saved students
+@app.route('/api/view_students', methods=['GET'])
+def view_students():
+    try:
+        with open("attendance_log.txt", "r") as f:
+            lines = [line.strip() for line in f.readlines()]
+    except FileNotFoundError:
+        lines = []
+    return jsonify({"students": lines})
+
+# Optional — serve static files
 @app.route('/<path:path>')
 def static_proxy(path):
     return send_from_directory('.', path)
 
-# ✅ NEW: API endpoint to read scanned student data
-@app.route("/api/students", methods=["GET"])
-def get_students():
-    """
-    Returns the list of students scanned (from attendance_log.txt)
-    """
-    file_path = "attendance_log.txt"
-
-    if not os.path.exists(file_path):
-        return jsonify({"students": [], "message": "No students found yet."})
-
-    with open(file_path, "r") as f:
-        lines = [line.strip() for line in f.readlines() if line.strip()]
-
-    # Optional: reverse to show latest first
-    lines.reverse()
-
-    return jsonify({"students": lines})
-
 if __name__ == '__main__':
-    # ✅ Run the Flask server
-    app.run(debug=True)
+    app.run(debug=True, port=5001)  # ✅ use 5001 to avoid AirPlay conflict
