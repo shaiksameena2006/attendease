@@ -1,38 +1,54 @@
 from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
 import asyncio
-from student import scan_kgrcet_students  # ✅ Import BLE scan function
 import os
+from datetime import datetime
+from student import scan_kgrcet_students  # ✅ BLE scanner function
 
 app = Flask(__name__, static_folder="static", template_folder=".")
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-attendance_file = "attendance_log.txt"
+# ✅ Directory to store attendance logs by date
+ATTENDANCE_DIR = "attendance_logs"
+os.makedirs(ATTENDANCE_DIR, exist_ok=True)
 
-@app.route('/')
+def get_today_log_file():
+    today = datetime.now().strftime("%Y-%m-%d")
+    return os.path.join(ATTENDANCE_DIR, f"attendance_{today}.txt")
+
+@app.route("/")
 def home():
-    return send_from_directory('.', 'index.html')
+    return send_from_directory(".", "index.html")
 
-@app.route('/api/scan', methods=['GET'])
+@app.route("/api/scan", methods=["GET"])
 def scan_students():
     try:
-        # Run the BLE scanning asynchronously
-        asyncio.run(scan_kgrcet_students())
-        return jsonify({"status": "success", "message": "Scan complete."})
+        today_file = get_today_log_file()
+
+        # Run scan for 20 seconds and collect names
+        students = asyncio.run(scan_kgrcet_students(duration=20, output_file=today_file))
+
+        return jsonify({
+            "status": "success",
+            "message": f"Scan complete. {len(students)} students detected."
+        })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
-@app.route('/api/view_students', methods=['GET'])
+@app.route("/api/view_students", methods=["GET"])
 def view_students():
-    if not os.path.exists(attendance_file):
+    today_file = get_today_log_file()
+    if not os.path.exists(today_file):
         return jsonify({"students": []})
-    with open(attendance_file) as f:
+
+    with open(today_file, "r", encoding="utf-8") as f:
         students = [line.strip() for line in f.readlines()]
+
     return jsonify({"students": students})
 
-@app.route('/<path:path>')
+@app.route("/<path:path>")
 def static_proxy(path):
-    return send_from_directory('.', path)
+    return send_from_directory(".", path)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001, debug=True)
