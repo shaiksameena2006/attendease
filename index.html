@@ -54,28 +54,19 @@
     startScan.addEventListener("click", async () => {
       log.innerHTML = "🔍 Scanning for student BLE devices...";
 
-      // Call backend to trigger BLE scan
-      fetch("http://127.0.0.1:5001/api/scan")
-        .then(() => {
-          let interval = setInterval(async () => {
-            const res = await fetch("http://127.0.0.1:5001/api/view_students");
-            const data = await res.json();
-            if (Object.keys(data).length > 0) {
-              log.innerHTML = "<strong>✅ Devices Found:</strong><br><br>";
-              for (const [name, address] of Object.entries(data)) {
-                log.innerHTML += `${name} — ${address}<br>`;
-              }
-            } else {
-              log.innerHTML += "<br>⏳ Still scanning...";
-            }
-          }, 3000);
+      try {
+        // Trigger scan on backend
+        const response = await fetch("http://127.0.0.1:5001/api/scan");
+        const result = await response.json();
 
-          // Stop refreshing after 20s
-          setTimeout(() => clearInterval(interval), 20000);
-        })
-        .catch(err => {
-          log.innerHTML = `❌ Error starting scan: ${err}`;
-        });
+        if (result.status === "success") {
+          log.innerHTML = "✅ Scan complete! Attendance data saved for today.";
+        } else {
+          log.innerHTML = `❌ Scan failed: ${result.message}`;
+        }
+      } catch (err) {
+        log.innerHTML = `❌ Error starting scan: ${err}`;
+      }
     });
   </script>
 </body>
