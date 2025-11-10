@@ -8,7 +8,6 @@ import {
   TrendingUp,
   Award,
   Clock,
-  X,
 } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { QuickActionGrid } from "@/components/dashboard/QuickActionGrid";
@@ -16,6 +15,7 @@ import { ChartPlaceholder } from "@/components/dashboard/ChartPlaceholder";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -29,6 +29,11 @@ export function FacultyDashboard() {
     pendingTasks: 0,
   });
   const [loading, setLoading] = useState(true);
+
+  // For "View Students" modal
+  const [showStudents, setShowStudents] = useState(false);
+  const [students, setStudents] = useState<string[]>([]);
+  const [fetchingStudents, setFetchingStudents] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -72,6 +77,20 @@ export function FacultyDashboard() {
     }
   };
 
+  const handleViewStudents = async () => {
+    setShowStudents(true);
+    setFetchingStudents(true);
+    try {
+      const res = await fetch("http://127.0.0.1:5000/api/students");
+      const data = await res.json();
+      setStudents(data.students || []);
+    } catch (error) {
+      console.error("Error fetching students:", error);
+    } finally {
+      setFetchingStudents(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -80,7 +99,6 @@ export function FacultyDashboard() {
     );
   }
 
-  // ✅ Updated quick actions
   const quickActions = [
     {
       id: "1",
@@ -111,7 +129,7 @@ export function FacultyDashboard() {
       id: "5",
       label: "View Students",
       icon: Users,
-      onClick: () => console.log("View Students"),
+      onClick: handleViewStudents,
     },
     {
       id: "6",
@@ -178,6 +196,36 @@ export function FacultyDashboard() {
 
       {/* Quick Actions */}
       <QuickActionGrid actions={quickActions} columns={3} />
+
+      {/* 🧾 View Students Modal */}
+      <Dialog open={showStudents} onOpenChange={setShowStudents}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Scanned Students</DialogTitle>
+          </DialogHeader>
+
+          {fetchingStudents ? (
+            <p className="text-muted-foreground text-center py-4">
+              Fetching students...
+            </p>
+          ) : students.length > 0 ? (
+            <ul className="space-y-2 max-h-[400px] overflow-y-auto">
+              {students.map((student, idx) => (
+                <li
+                  key={idx}
+                  className="border border-gray-300 dark:border-gray-700 p-2 rounded-md"
+                >
+                  {student}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-muted-foreground py-4">
+              No students found in attendance log.
+            </p>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
