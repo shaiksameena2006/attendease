@@ -18,7 +18,7 @@ def get_today_log_file():
 
 @app.route("/")
 def home():
-    return send_from_directory(".", "index.html")
+    return {"message": "Backend is running. Use /api routes for data."}
 
 @app.route("/api/scan", methods=["GET"])
 def scan_students():
