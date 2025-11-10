@@ -8,6 +8,7 @@ import {
   TrendingUp,
   Award,
   Clock,
+  X,
 } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { QuickActionGrid } from "@/components/dashboard/QuickActionGrid";
@@ -15,7 +16,6 @@ import { ChartPlaceholder } from "@/components/dashboard/ChartPlaceholder";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -29,15 +29,6 @@ export function FacultyDashboard() {
     pendingTasks: 0,
   });
   const [loading, setLoading] = useState(true);
-
-  // State for students modal
-  const [showStudents, setShowStudents] = useState(false);
-  const [students, setStudents] = useState<string[]>([]);
-  const [fetchingStudents, setFetchingStudents] = useState(false);
-
-  // State for scan progress
-  const [scanning, setScanning] = useState(false);
-  const [scanMessage, setScanMessage] = useState("");
 
   useEffect(() => {
     if (user) {
@@ -81,50 +72,6 @@ export function FacultyDashboard() {
     }
   };
 
-  // 🟢 MARK ATTENDANCE → Trigger BLE scan
-  const handleMarkAttendance = async () => {
-    setScanning(true);
-    setScanMessage("🔍 Scanning in progress... Please wait 20 seconds.");
-
-    try {
-      const res = await fetch("http://localhost:5001/api/scan");
-      const data = await res.json();
-
-      if (data.status === "success") {
-        setScanMessage("✅ Scan complete! Attendance saved.");
-      } else {
-        setScanMessage(`❌ Scan failed: ${data.message}`);
-      }
-    } catch (err) {
-      console.error("Error triggering scan:", err);
-      setScanMessage("❌ Error starting BLE scan.");
-    } finally {
-      setScanning(false);
-      // Auto-hide message after 8 seconds
-      setTimeout(() => setScanMessage(""), 8000);
-    }
-  };
-
-  // 🟣 VIEW STUDENTS → Fetch today’s attendance
-  const handleViewStudents = async () => {
-    setShowStudents(true);
-    setFetchingStudents(true);
-
-    try {
-      const res = await fetch("/api/view_students");
-      const data = await res.json();
-
-      // Filter today's data only
-      const today = new Date().toISOString().split("T")[0];
-      const todays = data.students?.filter((s: string) => s.includes(today)) || [];
-      setStudents(todays);
-    } catch (error) {
-      console.error("Error fetching students:", error);
-    } finally {
-      setFetchingStudents(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -133,14 +80,15 @@ export function FacultyDashboard() {
     );
   }
 
+  // ✅ Updated quick actions
   const quickActions = [
     {
       id: "1",
       label: "Mark Attendance",
       icon: CheckSquare,
-      onClick: () => window.open("http://127.0.0.1:5001/", "_blank"), // ✅ Correct backend URL
+      onClick: () => window.open("http://127.0.0.1:5000/scan", "_blank"),
       variant: "default" as const,
-    },    
+    },
     {
       id: "2",
       label: "Manage Classes",
@@ -163,7 +111,7 @@ export function FacultyDashboard() {
       id: "5",
       label: "View Students",
       icon: Users,
-      onClick: handleViewStudents,
+      onClick: () => console.log("View Students"),
     },
     {
       id: "6",
@@ -189,7 +137,7 @@ export function FacultyDashboard() {
             </Avatar>
             <div className="flex-1">
               <h1 className="text-2xl font-bold">
-                Welcome, {profile?.full_name || "Faculty"}
+                Good morning, {profile?.full_name || "Faculty"}
               </h1>
               <p className="text-muted-foreground">
                 {profile?.department || "Faculty Member"}
@@ -209,7 +157,7 @@ export function FacultyDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Total Students" value={stats.totalStudents.toString()} icon={Users} />
         <StatCard title="Classes Today" value={stats.classesToday.toString()} icon={BookOpen} />
-        <StatCard title="Avg Attendance" value={stats.avgAttendance > 0 ? `${stats.avgAttendance}%` : "N/A"} icon={CheckSquare} />
+        <StatCard title="Avg Attendance" value={stats.avgAttendance > 0 ? ${stats.avgAttendance}% : "N/A"} icon={CheckSquare} />
         <StatCard title="Pending Tasks" value={stats.pendingTasks.toString()} icon={FileText} />
       </div>
 
@@ -230,41 +178,6 @@ export function FacultyDashboard() {
 
       {/* Quick Actions */}
       <QuickActionGrid actions={quickActions} columns={3} />
-
-      {/* Scan Status */}
-      {scanMessage && (
-        <p className="text-center text-sm mt-2 text-blue-500">{scanMessage}</p>
-      )}
-
-      {/* 🧾 View Students Modal */}
-      <Dialog open={showStudents} onOpenChange={setShowStudents}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Today's Scanned Students</DialogTitle>
-          </DialogHeader>
-
-          {fetchingStudents ? (
-            <p className="text-muted-foreground text-center py-4">
-              Fetching students...
-            </p>
-          ) : students.length > 0 ? (
-            <ul className="space-y-2 max-h-[400px] overflow-y-auto">
-              {students.map((student, idx) => (
-                <li
-                  key={idx}
-                  className="border border-gray-300 dark:border-gray-700 p-2 rounded-md"
-                >
-                  {student}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-muted-foreground py-4">
-              No attendance records for today.
-            </p>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
