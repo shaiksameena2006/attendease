@@ -5,12 +5,12 @@ import { componentTagger } from "lovable-tagger";
 
 export default defineConfig(({ mode }) => ({
   server: {
-    host: "127.0.0.1",
+    host: "localhost",
     port: 8080,
     open: true,
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:5001",  // ✅ Flask backend
+        target: "http://localhost:5001", // ✅ not 127.0.0.1
         changeOrigin: true,
         secure: false,
       },
