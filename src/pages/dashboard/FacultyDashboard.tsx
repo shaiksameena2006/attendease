@@ -30,10 +30,14 @@ export function FacultyDashboard() {
   });
   const [loading, setLoading] = useState(true);
 
-  // For "View Students" modal
+  // State for students modal
   const [showStudents, setShowStudents] = useState(false);
   const [students, setStudents] = useState<string[]>([]);
   const [fetchingStudents, setFetchingStudents] = useState(false);
+
+  // State for scan progress
+  const [scanning, setScanning] = useState(false);
+  const [scanMessage, setScanMessage] = useState("");
 
   useEffect(() => {
     if (user) {
@@ -77,13 +81,43 @@ export function FacultyDashboard() {
     }
   };
 
+  // 🟢 MARK ATTENDANCE → Trigger BLE scan
+  const handleMarkAttendance = async () => {
+    setScanning(true);
+    setScanMessage("🔍 Scanning in progress... Please wait 20 seconds.");
+
+    try {
+      const res = await fetch("http://localhost:5001/api/scan");
+      const data = await res.json();
+
+      if (data.status === "success") {
+        setScanMessage("✅ Scan complete! Attendance saved.");
+      } else {
+        setScanMessage(`❌ Scan failed: ${data.message}`);
+      }
+    } catch (err) {
+      console.error("Error triggering scan:", err);
+      setScanMessage("❌ Error starting BLE scan.");
+    } finally {
+      setScanning(false);
+      // Auto-hide message after 8 seconds
+      setTimeout(() => setScanMessage(""), 8000);
+    }
+  };
+
+  // 🟣 VIEW STUDENTS → Fetch today’s attendance
   const handleViewStudents = async () => {
     setShowStudents(true);
     setFetchingStudents(true);
+
     try {
-      const res = await fetch("http://127.0.0.1:5000/api/students");
+      const res = await fetch("http://localhost:5001/api/view_students");
       const data = await res.json();
-      setStudents(data.students || []);
+
+      // Filter today's data only
+      const today = new Date().toISOString().split("T")[0];
+      const todays = data.students?.filter((s: string) => s.includes(today)) || [];
+      setStudents(todays);
     } catch (error) {
       console.error("Error fetching students:", error);
     } finally {
@@ -102,9 +136,9 @@ export function FacultyDashboard() {
   const quickActions = [
     {
       id: "1",
-      label: "Mark Attendance",
+      label: scanning ? "Scanning..." : "Mark Attendance",
       icon: CheckSquare,
-      onClick: () => window.open("http://127.0.0.1:5000/scan", "_blank"),
+      onClick: handleMarkAttendance,
       variant: "default" as const,
     },
     {
@@ -155,7 +189,7 @@ export function FacultyDashboard() {
             </Avatar>
             <div className="flex-1">
               <h1 className="text-2xl font-bold">
-                Good morning, {profile?.full_name || "Faculty"}
+                Welcome, {profile?.full_name || "Faculty"}
               </h1>
               <p className="text-muted-foreground">
                 {profile?.department || "Faculty Member"}
@@ -197,11 +231,16 @@ export function FacultyDashboard() {
       {/* Quick Actions */}
       <QuickActionGrid actions={quickActions} columns={3} />
 
+      {/* Scan Status */}
+      {scanMessage && (
+        <p className="text-center text-sm mt-2 text-blue-500">{scanMessage}</p>
+      )}
+
       {/* 🧾 View Students Modal */}
       <Dialog open={showStudents} onOpenChange={setShowStudents}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Scanned Students</DialogTitle>
+            <DialogTitle>Today's Scanned Students</DialogTitle>
           </DialogHeader>
 
           {fetchingStudents ? (
@@ -221,7 +260,7 @@ export function FacultyDashboard() {
             </ul>
           ) : (
             <p className="text-muted-foreground py-4">
-              No students found in attendance log.
+              No attendance records for today.
             </p>
           )}
         </DialogContent>
