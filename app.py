@@ -1,54 +1,51 @@
 from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
-import asyncio
+import json
 import os
 from datetime import datetime
-from student import scan_kgrcet_students  # ✅ BLE scanner function
 
-app = Flask(__name__, static_folder="static", template_folder=".")
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+app = Flask(__name__, static_folder=".", static_url_path="")
+CORS(app)
 
-# ✅ Directory to store attendance logs by date
-ATTENDANCE_DIR = "attendance_logs"
-os.makedirs(ATTENDANCE_DIR, exist_ok=True)
+ATTENDANCE_FILE = "attendance_log.json"
 
-def get_today_log_file():
-    today = datetime.now().strftime("%Y-%m-%d")
-    return os.path.join(ATTENDANCE_DIR, f"attendance_{today}.txt")
-
+# ✅ Serve your HTML scanning interface
 @app.route("/")
 def home():
     return send_from_directory(".", "index.html")
 
+# ✅ Simulated BLE scanning function
+def perform_ble_scan():
+    students = {
+        "Sameena": "A1:B2:C3:D4:E5:F6",
+        "Sumith": "B1:C2:D3:E4:F5:G6",
+        "Vivek": "C1:D2:E3:F4:G5:H6"
+    }
+    return students
+
+# ✅ Scan and save current attendance
 @app.route("/api/scan", methods=["GET"])
-def scan_students():
-    try:
-        today_file = get_today_log_file()
+def scan_devices():
+    students = perform_ble_scan()
 
-        # Run scan for 20 seconds and collect names
-        students = asyncio.run(scan_kgrcet_students(duration=20, output_file=today_file))
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    data_to_save = {"timestamp": timestamp, "students": students}
 
-        return jsonify({
-            "status": "success",
-            "message": f"Scan complete. {len(students)} students detected."
-        })
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+    with open(ATTENDANCE_FILE, "w") as f:
+        json.dump(data_to_save, f, indent=4)
 
+    return jsonify({"status": "success", "message": "Scan complete", "data": data_to_save})
+
+# ✅ Show latest scanned students
 @app.route("/api/view_students", methods=["GET"])
 def view_students():
-    today_file = get_today_log_file()
-    if not os.path.exists(today_file):
-        return jsonify({"students": []})
+    if not os.path.exists(ATTENDANCE_FILE):
+        return jsonify({"error": "No attendance data found"}), 404
 
-    with open(today_file, "r", encoding="utf-8") as f:
-        students = [line.strip() for line in f.readlines()]
+    with open(ATTENDANCE_FILE, "r") as f:
+        data = json.load(f)
 
-    return jsonify({"students": students})
-
-@app.route("/<path:path>")
-def static_proxy(path):
-    return send_from_directory(".", path)
+    return jsonify(data)
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5001, debug=True)
+    app.run(host="127.0.0.1", port=5001, debug=True)
