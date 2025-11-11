@@ -157,7 +157,12 @@ export function FacultyDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Total Students" value={stats.totalStudents.toString()} icon={Users} />
         <StatCard title="Classes Today" value={stats.classesToday.toString()} icon={BookOpen} />
-        <StatCard title="Avg Attendance" value={stats.avgAttendance > 0 ? ${stats.avgAttendance}% : "N/A"} icon={CheckSquare} />
+        <StatCard
+  title="Avg Attendance"
+  value={stats.avgAttendance > 0 ? `${stats.avgAttendance}%` : "N/A"}
+  icon={CheckSquare}
+/>
+
         <StatCard title="Pending Tasks" value={stats.pendingTasks.toString()} icon={FileText} />
       </div>
 
