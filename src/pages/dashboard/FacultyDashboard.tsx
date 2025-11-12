@@ -86,7 +86,7 @@ export function FacultyDashboard() {
       id: "1",
       label: "Mark Attendance",
       icon: CheckSquare,
-      onClick: () => window.open("http://127.0.0.1:5000/scan", "_blank"),
+      onClick: () => window.open("http://127.0.0.1:5000/", "_blank"),
       variant: "default" as const,
     },
     {
