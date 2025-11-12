@@ -3,17 +3,16 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
 export default defineConfig({
-  root: ".", // Root is the current directory (attendease)
+  root: ".", // current folder (inner attendease)
   server: {
     host: "127.0.0.1",
     port: 8080,
-    open: "/dashboard.html", // 👈 opens this file automatically
+    open: "/dashboard.html", // 👈 open your renamed HTML file
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:5000",
+        target: "http://127.0.0.1:5000", // Flask backend
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path.replace(/^\/api/, ""),
       },
     },
   },
@@ -25,7 +24,9 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
-      input: path.resolve(__dirname, "dashboard.html"), // 👈 main HTML entry
+      input: {
+        main: path.resolve(__dirname, "dashboard.html"),
+      },
     },
   },
 });
