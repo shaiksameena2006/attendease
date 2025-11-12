@@ -1,16 +1,11 @@
-from flask import Flask, render_template, send_from_directory
+from flask import Flask, render_template
 
-app = Flask(__name__, static_folder="static", template_folder=".")
+# Tell Flask exactly where to find the templates
+app = Flask(__name__, template_folder="template/templates")
 
-# Serve the main HTML file
 @app.route('/')
 def home():
-    return send_from_directory('.', 'ble_scanner.html')
-
-# Optional — serve static files (CSS, JS, etc.)
-@app.route('/<path:path>')
-def static_proxy(path):
-    return send_from_directory('.', path)
+    return render_template('ble_scanner.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
