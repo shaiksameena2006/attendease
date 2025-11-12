@@ -1,30 +1,33 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+import { componentTagger } from "lovable-tagger";
 
-export default defineConfig({
-  root: "attendease", // 👈 tell Vite to look in inner folder
+export default defineConfig(({ mode }) => ({
+  root: ".", // 👈 Your main folder (attendease)
+  publicDir: "public",
   server: {
-    host: "127.0.0.1",
+    host: "::",
     port: 8080,
-    open: "/dashboard.html", // 👈 open your renamed HTML file
+    open: "/dashboard.html", // 👈 Automatically open dashboard.html
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:5000", // Flask backend
+        target: "http://127.0.0.1:5000", // 👈 Flask backend (port 5000)
         changeOrigin: true,
         secure: false,
       },
     },
   },
-  plugins: [react()],
+  plugins: [
+    react(),
+    mode === "development" && componentTagger(),
+  ].filter(Boolean),
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "attendease/src"),
+      "@": path.resolve(__dirname, "./src"),
     },
   },
   build: {
-    rollupOptions: {
-      input: path.resolve(__dirname, "attendease/dashboard.html"),
-    },
+    outDir: "dist",
   },
-});
+}));
