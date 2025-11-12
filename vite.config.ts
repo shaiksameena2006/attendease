@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
 export default defineConfig({
-  root: ".", // current folder (inner attendease)
+  root: "attendease", // 👈 tell Vite to look in inner folder
   server: {
     host: "127.0.0.1",
     port: 8080,
@@ -19,14 +19,12 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
+      "@": path.resolve(__dirname, "attendease/src"),
     },
   },
   build: {
     rollupOptions: {
-      input: {
-        main: path.resolve(__dirname, "dashboard.html"),
-      },
+      input: path.resolve(__dirname, "attendease/dashboard.html"),
     },
   },
 });
