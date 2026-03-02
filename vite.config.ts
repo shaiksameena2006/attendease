@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    open: "/dashboard.html", // 👈 Automatically open dashboard.html
+    open: "/", // 👈 Automatically open dashboard.html
     proxy: {
       "/api": {
         target: "http://127.0.0.1:5000", // 👈 Flask backend (port 5000)
