@@ -25,3 +25,4 @@ def start_scan():
 
 @app.route('/get_results')
 def get_results():
+    return jsonify(last_results)
