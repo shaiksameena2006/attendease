@@ -4,7 +4,7 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 
 export default defineConfig(({ mode }) => ({
-  root: ".", // 👈 Your main folder (attendease)
+   // 👈 Your main folder (attendease)
   publicDir: "public",
   server: {
     host: "::",
