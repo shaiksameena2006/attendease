@@ -3,7 +3,7 @@ import { useAuth, AuthProvider } from "@/contexts/AuthContext";
 import { FacultyDashboard } from "@/pages/dashboard/FacultyDashboard";
 import { StudentDashboard } from "@/pages/dashboard/StudentDashboard";
 import { AdminDashboard } from "@/pages/dashboard/AdminDashboard";
-import { SignInPage } from "@/pages/auth/SignInPage";
+import { Login } from "@/pages/auth/Login";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 
 function AppRoutes() {
