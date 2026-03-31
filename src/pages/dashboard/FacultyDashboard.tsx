@@ -8,7 +8,6 @@ import {
   TrendingUp,
   Award,
   Clock,
-  X,
 } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { QuickActionGrid } from "@/components/dashboard/QuickActionGrid";
@@ -30,10 +29,12 @@ export function FacultyDashboard() {
   });
   const [loading, setLoading] = useState(true);
 
+  // For BLE scanning
+  const [scanning, setScanning] = useState(false);
+  const [detectedStudents, setDetectedStudents] = useState<Record<string, string>>({});
+
   useEffect(() => {
-    if (user) {
-      fetchFacultyData();
-    }
+    if (user) fetchFacultyData();
   }, [user]);
 
   const fetchFacultyData = async () => {
@@ -45,7 +46,6 @@ export function FacultyDashboard() {
         .select("*")
         .eq("id", user.id)
         .single();
-
       setProfile(profileData);
 
       const { data: classes } = await supabase
@@ -72,6 +72,27 @@ export function FacultyDashboard() {
     }
   };
 
+  // Start BLE scanning
+  const startScan = async () => {
+    setScanning(true);
+    setDetectedStudents({});
+    try {
+      await fetch("http://127.0.0.1:5000/start_scan"); // Trigger Flask scan
+
+      // Wait for scan to finish (15s + buffer)
+      setTimeout(async () => {
+        const res = await fetch("http://127.0.0.1:5000/get_results");
+        const data = await res.json();
+        setDetectedStudents(data);
+        setScanning(false);
+      }, 16000);
+    } catch (err) {
+      console.error("Scan error:", err);
+      alert("Failed to start scan.");
+      setScanning(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -80,13 +101,12 @@ export function FacultyDashboard() {
     );
   }
 
-  // ✅ Updated quick actions
   const quickActions = [
     {
       id: "1",
-      label: "Mark Attendance",
+      label: scanning ? "Scanning..." : "Mark Attendance",
       icon: CheckSquare,
-      onClick: () => window.open("http://127.0.0.1:5000/", "_blank"),
+      onClick: startScan,
       variant: "default" as const,
     },
     {
@@ -158,11 +178,10 @@ export function FacultyDashboard() {
         <StatCard title="Total Students" value={stats.totalStudents.toString()} icon={Users} />
         <StatCard title="Classes Today" value={stats.classesToday.toString()} icon={BookOpen} />
         <StatCard
-  title="Avg Attendance"
-  value={stats.avgAttendance > 0 ? `${stats.avgAttendance}%` : "N/A"}
-  icon={CheckSquare}
-/>
-
+          title="Avg Attendance"
+          value={stats.avgAttendance > 0 ? `${stats.avgAttendance}%` : "N/A"}
+          icon={CheckSquare}
+        />
         <StatCard title="Pending Tasks" value={stats.pendingTasks.toString()} icon={FileText} />
       </div>
 
@@ -183,6 +202,28 @@ export function FacultyDashboard() {
 
       {/* Quick Actions */}
       <QuickActionGrid actions={quickActions} columns={3} />
+
+      {/* Detected Students Modal */}
+      {Object.keys(detectedStudents).length > 0 && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-96 max-w-full text-black">
+            <h2 className="text-xl font-bold mb-4">Detected Students</h2>
+            <ul className="max-h-64 overflow-y-auto space-y-2">
+              {Object.entries(detectedStudents).map(([name, address]) => (
+                <li key={address} className="p-2 bg-gray-200 rounded">
+                  {name} — {address}
+                </li>
+              ))}
+            </ul>
+            <button
+              className="mt-4 px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark"
+              onClick={() => setDetectedStudents({})}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
