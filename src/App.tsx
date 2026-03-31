@@ -1,9 +1,9 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth, AuthProvider } from "@/contexts/AuthContext";
-import { FacultyDashboard} from "@/dashboard/FacultyDashboard";
-import { StudentDashboard } from "@/dashboard/StudentDashboard";
-import { AdminDashboard } from "@/pages/AdminDashboard";
-import { SignInPage } from "@/components/auth/SignInPage";
+import { FacultyDashboard } from "@/dashboard/pages/FacultyDashboard";
+import { StudentDashboard } from "@/pages/dashboard/StudentDashboard";
+import { AdminDashboard } from "@/pages/dashboard/AdminDashboard";
+import { SignInPage } from "@/pages/auth/SignInPage";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 
 function AppRoutes() {
