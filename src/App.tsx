@@ -1,8 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth, AuthProvider } from "@/contexts/AuthContext";
-import { FacultyDashboard } from "@/components/dashboard/FacultyDashboard";
-import { StudentDashboard } from "@/components/dashboard/StudentDashboard";
-import { AdminDashboard } from "@/components/dashboard/AdminDashboard";
+import FacultyDashboard from "@/components/dashboard/FacultyDashboard";
+import StudentDashboard from "@/components/dashboard/StudentDashboard";
+import AdminDashboard from "@/components/dashboard/AdminDashboard";
 import { SignInPage } from "@/components/auth/SignInPage";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 
