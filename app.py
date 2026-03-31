@@ -1,8 +1,10 @@
 from flask import Flask, render_template, jsonify
 import asyncio
 from student import scan_kgrcet_students
+from flask_cors import CORS
 
 app = Flask(__name__, template_folder="templates")
+CORS(app)  # Enable cross-origin requests
 
 # Temporary memory store for scan results
 last_results = {}
@@ -16,7 +18,7 @@ def start_scan():
     """Trigger BLE scanning asynchronously."""
     global last_results
     try:
-        # Run BLE scan (20 sec)
+        # Run BLE scan (15 sec)
         last_results = asyncio.run(scan_kgrcet_students(duration=15))
         return jsonify({"status": "success", "message": "Scan completed"})
     except Exception as e:
@@ -26,5 +28,6 @@ def start_scan():
 @app.route('/get_results')
 def get_results():
     return jsonify(last_results)
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
