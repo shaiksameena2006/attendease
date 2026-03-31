@@ -3,7 +3,7 @@ import { useAuth, AuthProvider } from "@/contexts/AuthContext";
 import { FacultyDashboard } from "@/pages/dashboard/FacultyDashboard";
 import { StudentDashboard } from "@/pages/dashboard/StudentDashboard";
 import { AdminDashboard } from "@/pages/dashboard/AdminDashboard";
-import { Login } from "@/pages/auth/Login";
+import  Login  from "@/pages/auth/Login";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 
 function AppRoutes() {
@@ -14,7 +14,7 @@ function AppRoutes() {
   return (
     <Routes>
       {/* Public route */}
-      <Route path="/login" element={!user ? <SignInPage /> : <Navigate to="/" replace />} />
+      <Route path="/login" element={!user ? <Login /> : <Navigate to="/" replace />} />
 
       {/* Protected routes */}
       <Route
