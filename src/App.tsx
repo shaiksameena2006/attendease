@@ -4,12 +4,16 @@ import { FacultyDashboard } from "@/pages/dashboard/FacultyDashboard";
 import { StudentDashboard } from "@/pages/dashboard/StudentDashboard";
 import { AdminDashboard } from "@/pages/dashboard/AdminDashboard";
 import  Login  from "@/pages/auth/Login";
-import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 
 function AppRoutes() {
   const { user, role, isLoading } = useAuth();
 
-  if (isLoading) return <LoadingSpinner />;
+  if (isLoading)
+    return (
+      <div className="flex items-center justify-center min-h-screen text-xl font-bold">
+        Loading...
+      </div>
+    );
 
   return (
     <Routes>
