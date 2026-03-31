@@ -18,17 +18,10 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
-interface Stats {
-  totalStudents: number;
-  classesToday: number;
-  avgAttendance: number;
-  pendingTasks: number;
-}
-
 export function FacultyDashboard() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<any>(null);
-  const [stats, setStats] = useState<Stats>({
+  const [stats, setStats] = useState({
     totalStudents: 0,
     classesToday: 0,
     avgAttendance: 0,
@@ -36,6 +29,7 @@ export function FacultyDashboard() {
   });
   const [loading, setLoading] = useState(true);
 
+  // BLE scanning
   const [scanning, setScanning] = useState(false);
   const [detectedStudents, setDetectedStudents] = useState<Record<string, string>>({});
 
@@ -45,24 +39,23 @@ export function FacultyDashboard() {
 
   const fetchFacultyData = async () => {
     if (!user) return;
-
     try {
-      const { data: profileData, error: profileError } = await supabase
+      const { data: profileData } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", user.id)
         .single();
-      if (profileError) throw profileError;
       setProfile(profileData);
 
-      const { data: classes, error: classError } = await supabase
+      const { data: classes } = await supabase
         .from("classes")
         .select("*, class_enrollments(count)")
         .eq("faculty_id", user.id);
-      if (classError) throw classError;
 
-      const totalStudents =
-        classes?.reduce((sum, c) => sum + (c.class_enrollments?.[0]?.count || 0), 0) || 0;
+      const totalStudents = classes?.reduce(
+        (sum, c) => sum + (c.class_enrollments?.[0]?.count || 0),
+        0
+      ) || 0;
 
       setStats({
         totalStudents,
@@ -77,11 +70,12 @@ export function FacultyDashboard() {
     }
   };
 
+  // Start BLE scan
   const startScan = async () => {
     setDetectedStudents({});
     setScanning(true);
     try {
-      await fetch("http://127.0.0.1:5000/start_scan"); // trigger Flask scan
+      await fetch("http://127.0.0.1:5000/start_scan"); // Trigger Flask scan
       pollResults();
     } catch (err) {
       console.error("Scan error:", err);
@@ -90,14 +84,14 @@ export function FacultyDashboard() {
     }
   };
 
-  const pollResults = () => {
+  // Poll scan results every 2 seconds
+  const pollResults = async () => {
     const interval = setInterval(async () => {
       try {
         const res = await fetch("http://127.0.0.1:5000/get_results");
         const data = await res.json();
         setDetectedStudents(data.results || {});
         setScanning(data.scanning);
-
         if (!data.scanning) clearInterval(interval);
       } catch (err) {
         console.error("Error fetching scan results:", err);
@@ -141,7 +135,9 @@ export function FacultyDashboard() {
             </AvatarFallback>
           </Avatar>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold">Good morning, {profile?.full_name || "Faculty"}</h1>
+            <h1 className="text-2xl font-bold">
+              Good morning, {profile?.full_name || "Faculty"}
+            </h1>
             <p className="text-muted-foreground">{profile?.department || "Faculty Member"}</p>
           </div>
           <Badge variant="secondary" className="h-fit flex items-center gap-1">
@@ -192,4 +188,4 @@ export function FacultyDashboard() {
       )}
     </div>
   );
-}
+} 
