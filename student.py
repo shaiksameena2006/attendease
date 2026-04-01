@@ -2,42 +2,36 @@
 import asyncio
 from bleak import BleakScanner
 from datetime import datetime
-import os
 
-async def scan_kgrcet_students(duration=20, output_file="attendance_log.txt"):
-    print(f"🔍 Starting BLE scan for {duration} seconds...")
-    
+attendance_file = "attendance_log.txt"
+
+async def scan_kgrcet_students():
+    print("🔍 Scanning for student BLE devices (prefix: 'KGRCET')...\n")
     found_students = {}
 
     def detection_callback(device, advertisement_data):
-        # 🔥 IMPORTANT FIX: use advertisement_data.local_name
-        name = advertisement_data.local_name or device.name or "Unknown"
+        name = device.name or "Unknown"
 
-        print("🔎 Found device:", name, device.address)  # Debug log
-
-        if name and name.startswith("KGRCET") and name not in found_students:
-            found_students[name] = device.address
-
+        # Only log devices that start with 'KGRCET'
+        if name.startswith("KGRCET") and name not in found_students:
+            found_students[name] = True
             time_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             log_entry = f"{time_str}, {name}, {device.address}\n"
 
-            print(f"✅ MATCHED: {name} ({device.address})")
-
-            with open(output_file, "a", encoding="utf-8") as f:
+            print(f"✅ {name} ({device.address})")
+            with open(attendance_file, "a", encoding="utf-8") as f:
                 f.write(log_entry)
 
-    # Ensure directory exists
-    os.makedirs(os.path.dirname(output_file) or ".", exist_ok=True)
-
     scanner = BleakScanner(detection_callback)
-
     await scanner.start()
-    await asyncio.sleep(duration)
+    print("📡 Scanning for 20 seconds... please advertise from student phones.")
+    await asyncio.sleep(20)
     await scanner.stop()
 
     if found_students:
-        print(f"\n🧾 Scan complete. {len(found_students)} student(s) logged.")
+        print(f"\n🧾 Scan complete. {len(found_students)} student(s) logged in '{attendance_file}'.")
     else:
-        print("\n⚠️ No 'KGRCET' devices detected.")
+        print("\n⚠️ No 'KGRCET_' student devices detected. Make sure phones are advertising via nRF Connect.")
 
-    return found_students
+if __name__ == "__main__":
+    asyncio.run(scan_kgrcet_students())
