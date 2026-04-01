@@ -5,7 +5,7 @@ from student import scan_kgrcet_students
 from flask_cors import CORS
 
 app = Flask(__name__, template_folder="templates")
-CORS(app)  # Allow frontend requests
+CORS(app)
 
 # Store scan results
 last_results = {}
@@ -26,14 +26,17 @@ def start_scan():
 
     def run_scan():
         global last_results, is_scanning
+
         try:
             print("🔍 BLE Scan started...")
             is_scanning = True
 
+            # Run BLE scan
             results = asyncio.run(scan_kgrcet_students(duration=15))
 
-            print("✅ Scan completed:", results)
             last_results = results if results else {}
+
+            print("✅ Scan completed:", last_results)
 
         except Exception as e:
             print("❌ Error during scan:", e)

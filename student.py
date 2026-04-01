@@ -1,37 +1,27 @@
 
 import asyncio
 from bleak import BleakScanner
-from datetime import datetime
 
-attendance_file = "attendance_log.txt"
+async def scan_kgrcet_students(duration=15):
+    print("🔍 Scanning for student BLE devices...")
 
-async def scan_kgrcet_students():
-    print("🔍 Scanning for student BLE devices (prefix: 'KGRCET')...\n")
     found_students = {}
 
     def detection_callback(device, advertisement_data):
-        name = device.name or "Unknown"
+        # Use advertisement data FIRST (most reliable)
+        name = advertisement_data.local_name or device.name or "Unknown"
 
-        # Only log devices that start with 'KGRCET'
-        if name.startswith("KGRCET") and name not in found_students:
-            found_students[name] = True
-            time_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            log_entry = f"{time_str}, {name}, {device.address}\n"
-
-            print(f"✅ {name} ({device.address})")
-            with open(attendance_file, "a", encoding="utf-8") as f:
-                f.write(log_entry)
+        if name.startswith("KGRCET"):
+            found_students[name] = device.address
 
     scanner = BleakScanner(detection_callback)
     await scanner.start()
-    print("📡 Scanning for 20 seconds... please advertise from student phones.")
-    await asyncio.sleep(20)
+
+    print(f"📡 Scanning for {duration} seconds...")
+    await asyncio.sleep(duration)
+
     await scanner.stop()
 
-    if found_students:
-        print(f"\n🧾 Scan complete. {len(found_students)} student(s) logged in '{attendance_file}'.")
-    else:
-        print("\n⚠️ No 'KGRCET_' student devices detected. Make sure phones are advertising via nRF Connect.")
+    print("✅ Scan finished:", found_students)
 
-if __name__ == "__main__":
-    asyncio.run(scan_kgrcet_students())
+    return found_students
