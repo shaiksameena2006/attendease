@@ -23,25 +23,67 @@ function HomeRedirect() {
   if (role === "admin") return <Navigate to="/admin-dashboard" replace />;
   if (role === "student") return <Navigate to="/student-dashboard" replace />;
 
-  // ⛔ fallback ONLY if something is really wrong
   return <div className="text-center mt-10">Setting up your account...</div>;
 }
 
 function AppRoutes() {
-  const { user } = useAuth();
+  const { user, role, isLoading } = useAuth();
+
+  // ✅ VERY IMPORTANT: wait for auth to load
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen text-xl font-bold">
+        Loading...
+      </div>
+    );
+  }
 
   return (
     <Routes>
-      {/* Public */}
-      <Route path="/login" element={!user ? <Login /> : <Navigate to="/" replace />} />
+      {/* Public Route */}
+      <Route
+        path="/login"
+        element={!user ? <Login /> : <Navigate to="/" replace />}
+      />
 
-      {/* Smart Home */}
+      {/* Smart Home Redirect */}
       <Route path="/" element={<HomeRedirect />} />
 
-      {/* Dashboards */}
-      <Route path="/faculty-dashboard" element={<FacultyDashboard />} />
-      <Route path="/student-dashboard" element={<StudentDashboard />} />
-      <Route path="/admin-dashboard" element={<AdminDashboard />} />
+      {/* ✅ Protected Faculty Dashboard */}
+      <Route
+        path="/faculty-dashboard"
+        element={
+          user && role === "faculty" ? (
+            <FacultyDashboard />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        }
+      />
+
+      {/* ✅ Protected Student Dashboard */}
+      <Route
+        path="/student-dashboard"
+        element={
+          user && role === "student" ? (
+            <StudentDashboard />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        }
+      />
+
+      {/* ✅ Protected Admin Dashboard */}
+      <Route
+        path="/admin-dashboard"
+        element={
+          user && role === "admin" ? (
+            <AdminDashboard />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        }
+      />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
