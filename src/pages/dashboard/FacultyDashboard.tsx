@@ -75,7 +75,7 @@ export function FacultyDashboard() {
     setDetectedStudents({});
     setScanning(true);
     try {
-      await fetch("http://127.0.0.1:5000/start_scan"); // Trigger Flask scan
+      await fetch("http://192.168.29.153:5000/start_scan"); // Trigger Flask scan
       pollResults();
     } catch (err) {
       console.error("Scan error:", err);

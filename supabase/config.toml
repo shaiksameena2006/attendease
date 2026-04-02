@@ -27,7 +27,7 @@ max_message_size = 1048576
 [studio]
 enabled = true
 port = 54323
-api_url = "http://127.0.0.1"
+api_url = "http://192.168.29.153:5000"
 openai_api_key = "env(OPENAI_API_KEY)"
 
 [inbucket]
@@ -42,7 +42,7 @@ file_size_limit = "50MiB"
 
 [auth]
 enabled = true
-site_url = "http://127.0.0.1:3000"
+site_url = "http://.0.0.1:3000"
 additional_redirect_urls = ["https://localhost:3000"]
 jwt_expiry = 3600
 enable_refresh_token_rotation = true
