@@ -1,28 +1,36 @@
 from flask import Flask, render_template, jsonify
 import asyncio
 import threading
-from student import scan_kgrcet_students
 from flask_cors import CORS
+from student import scan_kgrcet_students
 
 app = Flask(__name__, template_folder="templates")
 CORS(app)
 
-# Store scan results
+# Global state
 last_results = {}
 is_scanning = False
 
 
+# -------------------------------
+# 🏠 Home Page
+# -------------------------------
 @app.route('/')
 def home():
     return render_template('ble_scanner.html')
 
 
-@app.route('/start_scan')
+# -------------------------------
+# 📡 Start BLE Scan
+# -------------------------------
+@app.route('/start_scan', methods=["GET"])
 def start_scan():
     global is_scanning
 
     if is_scanning:
-        return jsonify({"status": "already_running"})
+        return jsonify({
+            "status": "already_running"
+        })
 
     def run_scan():
         global last_results, is_scanning
@@ -31,10 +39,14 @@ def start_scan():
             print("🔍 BLE Scan started...")
             is_scanning = True
 
-            # Run BLE scan
+            # Run BLE scan properly
             results = asyncio.run(scan_kgrcet_students(duration=15))
 
-            last_results = results if results else {}
+            # Ensure valid dictionary
+            if isinstance(results, dict):
+                last_results = results
+            else:
+                last_results = {}
 
             print("✅ Scan completed:", last_results)
 
@@ -45,13 +57,18 @@ def start_scan():
         finally:
             is_scanning = False
 
-    # Run scan in background thread
-    threading.Thread(target=run_scan).start()
+    # Run in background thread (non-blocking)
+    threading.Thread(target=run_scan, daemon=True).start()
 
-    return jsonify({"status": "started"})
+    return jsonify({
+        "status": "started"
+    })
 
 
-@app.route('/get_results')
+# -------------------------------
+# 📊 Get Results
+# -------------------------------
+@app.route('/get_results', methods=["GET"])
 def get_results():
     return jsonify({
         "scanning": is_scanning,
@@ -59,12 +76,18 @@ def get_results():
     })
 
 
-@app.route('/scan_status')
+# -------------------------------
+# 🔄 Scan Status
+# -------------------------------
+@app.route('/scan_status', methods=["GET"])
 def scan_status():
     return jsonify({
         "scanning": is_scanning
     })
 
 
+# -------------------------------
+# 🚀 Run Server
+# -------------------------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
