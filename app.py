@@ -3,48 +3,22 @@ import asyncio
 import threading
 from flask_cors import CORS
 from datetime import datetime
-
-# BLE function
-from student import scan_kgrcet_students
-
-# Supabase
 from supabase import create_client
-
-# OPTIONAL: Google Sheets (comment if not ready)
-USE_GOOGLE_SHEETS = False
-
-if USE_GOOGLE_SHEETS:
-    import gspread
-    from oauth2client.service_account import ServiceAccountCredentials
+from student import scan_kgrcet_students
 
 app = Flask(__name__, template_folder="templates")
 CORS(app)
 
 # -------------------------------
-# 🔐 Supabase Config
+# 🔑 SUPABASE CONFIG
 # -------------------------------
-SUPABASE_URL = "YOUR_SUPABASE_URL"
-SUPABASE_KEY = "YOUR_SUPABASE_KEY"
+SUPABASE_URL = "https://fvctgxrhvacexqbnvthy.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2Y3RneHJodmFjZXhxYm52dGh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MTczMjYsImV4cCI6MjA4Nzk5MzMyNn0.LoncwR8EZhE2FnuZcdRmwyIPc03VCVKF-rKFzAbDQPc"
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # -------------------------------
-# 📄 Google Sheets Setup (optional)
-# -------------------------------
-if USE_GOOGLE_SHEETS:
-    scope = [
-        "https://spreadsheets.google.com/feeds",
-        "https://www.googleapis.com/auth/drive"
-    ]
-
-    creds = ServiceAccountCredentials.from_json_keyfile_name(
-        "credentials.json", scope
-    )
-    client = gspread.authorize(creds)
-    sheet = client.open("Attendance").sheet1
-
-# -------------------------------
-# Global state
+# 🌍 GLOBAL STATE
 # -------------------------------
 last_results = {}
 is_scanning = False
@@ -73,59 +47,48 @@ def start_scan():
             print("🔍 BLE Scan started...")
             is_scanning = True
 
+            # Run BLE scan
             results = asyncio.run(scan_kgrcet_students(duration=15))
 
             if isinstance(results, dict):
                 last_results = results
-                print("🔥 SCAN RESULTS:", results)
-
-                # -------------------------------
-                # 💾 SAVE ATTENDANCE
-                # -------------------------------
-                for student_id, student_name in results.items():
-
-                    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-                    # ✅ 1. Save to TXT
-                    try:
-                        with open("attendance_log.txt", "a") as f:
-                            f.write(f"{student_name},{student_id},{current_time}\n")
-                    except Exception as e:
-                        print("❌ TXT ERROR:", e)
-
-                    # ✅ 2. Save to Supabase
-                    try:
-                        supabase.table("attendance_records").insert({
-                            "name": student_name,
-                            "roll": student_id,
-                            "time": current_time
-                        }).execute()
-                    except Exception as e:
-                        print("❌ SUPABASE ERROR:", e)
-
-                    # ✅ 3. Save to Google Sheets (optional)
-                    if USE_GOOGLE_SHEETS:
-                        try:
-                            sheet.append_row([
-                                student_name,
-                                student_id,
-                                current_time
-                            ])
-                        except Exception as e:
-                            print("❌ SHEETS ERROR:", e)
-
             else:
-                print("⚠️ Invalid results format")
                 last_results = {}
 
+            print("✅ Scan completed:", last_results)
+
+            # -------------------------------
+            # 💾 SAVE TO SUPABASE
+            # -------------------------------
+            for student_id in last_results.keys():
+                data = {
+                    "student_id": student_id,
+                    "class_id": "your-class-id",  # 🔁 REPLACE THIS
+                    "date": datetime.now().date().isoformat(),
+                    "status": "present"
+                }
+
+                try:
+                    res = supabase.table("attendance_records").insert(data).execute()
+                    print("✅ Saved to Supabase:", res)
+                except Exception as e:
+                    print("❌ Supabase Error:", e)
+
+            # -------------------------------
+            # 📝 SAVE TO TXT FILE
+            # -------------------------------
+            with open("attendance_log.txt", "a") as f:
+                for student_id in last_results.keys():
+                    f.write(f"{student_id} - PRESENT - {datetime.now()}\n")
+
         except Exception as e:
-            print("❌ SCAN ERROR:", e)
+            print("❌ Error during scan:", e)
             last_results = {}
 
         finally:
             is_scanning = False
-            print("✅ Scan finished")
 
+    # Run scan in background
     threading.Thread(target=run_scan, daemon=True).start()
 
     return jsonify({"status": "started"})
@@ -153,4 +116,4 @@ def scan_status():
 # 🚀 Run Server
 # -------------------------------
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=False)
