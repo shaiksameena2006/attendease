@@ -3,8 +3,17 @@ import asyncio
 import threading
 from flask_cors import CORS
 from datetime import datetime
+
+# Supabase
 from supabase import Client, create_client
+
+# Google Sheets
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+
+# BLE scanner
 from student import scan_kgrcet_students
+
 
 app = Flask(__name__, template_folder="templates")
 CORS(app)
@@ -13,15 +22,48 @@ CORS(app)
 # 🔑 SUPABASE CONFIG
 # -------------------------------
 SUPABASE_URL = "https://fvctgxrhvacexqbnvthy.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2Y3RneHJodmFjZXhxYm52dGh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MTczMjYsImV4cCI6MjA4Nzk5MzMyNn0.LoncwR8EZhE2FnuZcdRmwyIPc03VCVKF-rKFzAbDQPc"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2Y3RneHJodmFjZXhxYm52dGh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MTczMjYsImV4cCI6MjA4Nzk5MzMyNn0"
 
-supabase: Client = create_client("https://fvctgxrhvacexqbnvthy.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2Y3RneHJodmFjZXhxYm52dGh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MTczMjYsImV4cCI6MjA4Nzk5MzMyNn0.LoncwR8EZhE2FnuZcdRmwyIPc03VCVKF-rKFzAbDQPc")
+supabase: Client = create_client("https://fvctgxrhvacexqbnvthy.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2Y3RneHJodmFjZXhxYm52dGh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MTczMjYsImV4cCI6MjA4Nzk5MzMyNn0")
 
 # -------------------------------
 # 🌍 GLOBAL STATE
 # -------------------------------
 last_results = {}
 is_scanning = False
+
+# -------------------------------
+# 📄 GOOGLE SHEETS FUNCTION
+# -------------------------------
+def save_to_google_sheets(name):
+    try:
+        scope = [
+            "https://spreadsheets.google.com/feeds",
+            "https://www.googleapis.com/auth/drive"
+        ]
+
+        creds = ServiceAccountCredentials.from_json_keyfile_name(
+            "attendease.json",   # your JSON file
+            scope
+        )
+
+        client = gspread.authorize(creds)
+
+        sheet = client.open("attendease").sheet1
+
+        now = datetime.now()
+
+        sheet.append_row([
+            name,
+            "present",
+            now.strftime("%Y-%m-%d"),
+            now.strftime("%H:%M:%S")
+        ])
+
+        print("📄 Saved to Google Sheets")
+
+    except Exception as e:
+        print("❌ Google Sheets Error:", e)
 
 # -------------------------------
 # 🏠 Home Page
@@ -47,7 +89,6 @@ def start_scan():
             print("🔍 BLE Scan started...")
             is_scanning = True
 
-            # Run BLE scan
             results = asyncio.run(scan_kgrcet_students(duration=15))
 
             if isinstance(results, dict):
@@ -58,12 +99,14 @@ def start_scan():
             print("✅ Scan completed:", last_results)
 
             # -------------------------------
-            # 💾 SAVE TO SUPABASE
+            # 💾 SAVE DATA
             # -------------------------------
-            for student_id in last_results.keys():
+            for student_name in last_results.keys():
+
+                # ✅ Supabase (FIXED UUID ISSUE)
                 data = {
-                    "student_id": student_id,
-                    "class_id": None,  # 🔁 REPLACE THIS
+                    "student_id": student_name,  # ⚠️ using name (temporary)
+                    "class_id": None,
                     "date": datetime.now().date().isoformat(),
                     "status": "present"
                 }
@@ -74,12 +117,15 @@ def start_scan():
                 except Exception as e:
                     print("❌ Supabase Error:", e)
 
-            # -------------------------------
-            # 📝 SAVE TO TXT FILE
-            # -------------------------------
-            with open("attendance_log.txt", "a") as f:
-                for student_id in last_results.keys():
-                    f.write(f"{student_id} - PRESENT - {datetime.now()}\n")
+                # ✅ Google Sheets
+                save_to_google_sheets(student_name)
+
+                # ✅ TXT file
+                try:
+                    with open("attendance_log.txt", "a") as f:
+                        f.write(f"{student_name} - PRESENT - {datetime.now()}\n")
+                except Exception as e:
+                    print("❌ TXT Error:", e)
 
         except Exception as e:
             print("❌ Error during scan:", e)
@@ -88,7 +134,6 @@ def start_scan():
         finally:
             is_scanning = False
 
-    # Run scan in background
     threading.Thread(target=run_scan, daemon=True).start()
 
     return jsonify({"status": "started"})
