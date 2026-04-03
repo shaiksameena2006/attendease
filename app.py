@@ -63,7 +63,7 @@ def start_scan():
             for student_id in last_results.keys():
                 data = {
                     "student_id": student_id,
-                    "class_id": "None",  # 🔁 REPLACE THIS
+                    "class_id": None,  # 🔁 REPLACE THIS
                     "date": datetime.now().date().isoformat(),
                     "status": "present"
                 }
