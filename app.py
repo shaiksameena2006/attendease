@@ -53,18 +53,25 @@ def get_sheet():
 
 
 # -------------------------------
-# 📅 GET TODAY AFTERNOON COLUMN
+# 📅 GET TODAY AFTERNOON COLUMN (FIXED)
 # -------------------------------
 def get_today_afternoon_column(sheet):
-    today = datetime.now().strftime("%d-%m-%Y")
+    today1 = datetime.now().strftime("%d-%m-%Y")   # 04-04-2026
+    today2 = datetime.now().strftime("%-d-%-m-%Y") # 4-4-2026 (Mac/Linux)
 
     header = sheet.row_values(1)
     sub_header = sheet.row_values(2)
 
+    print("📅 Today formats:", today1, today2)
+    print("📅 Header Row:", header)
+    print("📅 Sub Header Row:", sub_header)
+
     for col in range(len(header)):
-        if header[col] == today and sub_header[col] == "Afternoon":
+        if (header[col] == today1 or header[col] == today2) and sub_header[col] == "Afternoon":
+            print("✅ Column Found:", col + 1)
             return col + 1
 
+    print("❌ Column NOT found")
     return None
 
 
@@ -82,24 +89,22 @@ def mark_all_absent(sheet, col):
 
 
 # -------------------------------
-# 🟩 MARK PRESENT (ROLL NUMBER BASED)
+# 🟩 MARK PRESENT (ROLL BASED)
 # -------------------------------
 def mark_present_students(sheet, col, scanned_devices):
     data = sheet.get_all_records()
 
-    # 🔥 Extract roll numbers from scanned devices
     scanned_rolls = []
 
     for device in scanned_devices:
         if device.startswith("KGRCET_"):
-            roll = device.replace("KGRCET_", "").strip()
+            roll = device.replace("KGRCET_", "").strip().upper()
             scanned_rolls.append(roll)
 
     print("🎯 Scanned Roll Numbers:", scanned_rolls)
 
-    # 🔥 Match with sheet
     for i, row in enumerate(data):
-        sheet_roll = str(row["Roll No"]).strip()
+        sheet_roll = str(row["Roll No"]).strip().upper()
 
         if sheet_roll in scanned_rolls:
             row_number = i + 3
@@ -147,20 +152,21 @@ def start_scan():
             sheet = get_sheet()
 
             col = get_today_afternoon_column(sheet)
+            print("📅 Detected Column:", col)
 
             if col is None:
-                print("❌ Afternoon column for today not found!")
+                print("❌ STOPPED: Column not found")
                 return
 
-            # Step 1: Mark all absent
+            # Step 1
             mark_all_absent(sheet, col)
 
-            # Step 2: Mark present using roll numbers
+            # Step 2
             scanned_devices = list(last_results.keys())
             mark_present_students(sheet, col, scanned_devices)
 
             # -------------------------------
-            # 💾 OPTIONAL: SUPABASE + TXT LOG
+            # 💾 SUPABASE + TXT (SAFE)
             # -------------------------------
             for device in scanned_devices:
 
@@ -173,7 +179,7 @@ def start_scan():
                     }
 
                     supabase.table("attendance_records").insert(data).execute()
-                    print("✅ Saved to Supabase")
+                    print("✅ Supabase saved:", device)
 
                 except Exception as e:
                     print("❌ Supabase Error:", e)
@@ -181,6 +187,8 @@ def start_scan():
                 try:
                     with open("attendance_log.txt", "a") as f:
                         f.write(f"{device} - PRESENT - {datetime.now()}\n")
+                    print("✅ TXT saved:", device)
+
                 except Exception as e:
                     print("❌ TXT Error:", e)
 
