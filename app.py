@@ -58,8 +58,8 @@ def get_sheet():
 def get_today_afternoon_column(sheet):
     today = datetime.now().strftime("%d-%m-%Y")
 
-    header = sheet.row_values(1)      # Row 1 = Dates
-    sub_header = sheet.row_values(2)  # Row 2 = Morning/Afternoon
+    header = sheet.row_values(1)
+    sub_header = sheet.row_values(2)
 
     for col in range(len(header)):
         if header[col] == today and sub_header[col] == "Afternoon":
@@ -75,30 +75,36 @@ def mark_all_absent(sheet, col):
     data = sheet.get_all_records()
 
     for i in range(len(data)):
-        row_number = i + 3  # Data starts from row 3
+        row_number = i + 3
         sheet.update_cell(row_number, col, "A")
 
     print("🟥 All students marked ABSENT")
 
 
 # -------------------------------
-# 🟩 MARK PRESENT STUDENTS
+# 🟩 MARK PRESENT (ROLL NUMBER BASED)
 # -------------------------------
-def mark_present_students(sheet, col, scanned_names):
+def mark_present_students(sheet, col, scanned_devices):
     data = sheet.get_all_records()
 
+    # 🔥 Extract roll numbers from scanned devices
+    scanned_rolls = []
+
+    for device in scanned_devices:
+        if device.startswith("KGRCET_"):
+            roll = device.replace("KGRCET_", "").strip()
+            scanned_rolls.append(roll)
+
+    print("🎯 Scanned Roll Numbers:", scanned_rolls)
+
+    # 🔥 Match with sheet
     for i, row in enumerate(data):
-        sheet_name = row["Name"]
+        sheet_roll = str(row["Roll No"]).strip()
 
-        for scanned in scanned_names:
-            short_name = scanned.replace("KGRCET_", "")
-
-            # TEMP matching logic
-            if short_name.lower() in sheet_name.lower():
-                row_number = i + 3
-                sheet.update_cell(row_number, col, "P")
-                print(f"🟩 {sheet_name} marked PRESENT")
-                break
+        if sheet_roll in scanned_rolls:
+            row_number = i + 3
+            sheet.update_cell(row_number, col, "P")
+            print(f"🟩 {sheet_roll} marked PRESENT")
 
 
 # -------------------------------
@@ -149,34 +155,32 @@ def start_scan():
             # Step 1: Mark all absent
             mark_all_absent(sheet, col)
 
-            # Step 2: Mark present
-            scanned_names = list(last_results.keys())
-            mark_present_students(sheet, col, scanned_names)
+            # Step 2: Mark present using roll numbers
+            scanned_devices = list(last_results.keys())
+            mark_present_students(sheet, col, scanned_devices)
 
             # -------------------------------
             # 💾 OPTIONAL: SUPABASE + TXT LOG
             # -------------------------------
-            for student_name in scanned_names:
+            for device in scanned_devices:
 
-                # Supabase
                 try:
                     data = {
-                        "student_id": student_name,
+                        "student_id": device,
                         "class_id": None,
                         "date": datetime.now().date().isoformat(),
                         "status": "present"
                     }
 
-                    res = supabase.table("attendance_records").insert(data).execute()
+                    supabase.table("attendance_records").insert(data).execute()
                     print("✅ Saved to Supabase")
 
                 except Exception as e:
                     print("❌ Supabase Error:", e)
 
-                # TXT log
                 try:
                     with open("attendance_log.txt", "a") as f:
-                        f.write(f"{student_name} - PRESENT - {datetime.now()}\n")
+                        f.write(f"{device} - PRESENT - {datetime.now()}\n")
                 except Exception as e:
                     print("❌ TXT Error:", e)
 
