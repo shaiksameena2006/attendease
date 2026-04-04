@@ -75,24 +75,7 @@ def get_today_afternoon_column(sheet):
     return None
 
 
-def mark_all_absent(sheet, col):
-    try:
-        data = sheet.get_all_values()
-
-        # Start from row 3 (skip headers)
-        for row in range(3, len(data) + 1):
-            sheet.update_cell(row, col, "A")
-
-        print("🟥 All students marked ABSENT")
-
-    except Exception as e:
-        print("❌ Error marking absent:", e)
-
-
-# -------------------------------
-# 🟩 MARK PRESENT (ROLL BASED)
-# -------------------------------
-def mark_present_students(sheet, col, scanned_devices):
+def update_attendance(sheet, col, scanned_devices):
     try:
         data = sheet.get_all_values()
 
@@ -105,20 +88,38 @@ def mark_present_students(sheet, col, scanned_devices):
 
         print("🎯 Scanned Roll Numbers:", scanned_rolls)
 
-        # Loop through sheet rows
-        for i in range(2, len(data)):  # index 2 = row 3
+        updates = []
+
+        # Loop through students (row 3 onwards)
+        for i in range(2, len(data)):
             row = data[i]
 
-            # Roll No is column D → index 3
-            sheet_roll = row[3].strip().upper()
+            if len(row) < 4:
+                continue
 
+            sheet_roll = row[3].strip().upper()
+            row_number = i + 1
+
+            # Default = Absent
+            value = "A"
+
+            # If scanned → Present
             if sheet_roll in scanned_rolls:
-                row_number = i + 1
-                sheet.update_cell(row_number, col, "P")
+                value = "P"
                 print(f"🟩 {sheet_roll} marked PRESENT")
 
+            updates.append({
+                "range": f"{chr(64 + col)}{row_number}",
+                "values": [[value]]
+            })
+
+        # 🚀 SINGLE API CALL
+        sheet.batch_update(updates)
+
+        print("🚀 Attendance updated in ONE API call")
+
     except Exception as e:
-        print("❌ Error marking present:", e)
+        print("❌ Batch update error:", e)
 
 
 # -------------------------------
