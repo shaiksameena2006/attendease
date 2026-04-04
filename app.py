@@ -13,6 +13,9 @@ from student import scan_kgrcet_students
 app = Flask(__name__, template_folder="templates")
 CORS(app)
 
+# -------------------------------
+# 🌍 GLOBAL STATE
+# -------------------------------
 last_results = {}
 is_scanning = False
 
@@ -34,6 +37,7 @@ def get_sheet():
 
         client = gspread.authorize(creds)
         sheet = client.open("Copy of Aavishkar 2026").sheet1
+
         return sheet
 
     except Exception as e:
@@ -42,38 +46,44 @@ def get_sheet():
 
 
 # -------------------------------
-# 📅 COLUMN FIND
+# 📅 FIND TODAY AFTERNOON COLUMN (MERGED FIX)
 # -------------------------------
 def get_today_afternoon_column(sheet):
-    try:
-        today1 = datetime.now().strftime("%d-%m-%Y")
-        today2 = datetime.now().strftime("%-d-%-m-%Y")
+    today = datetime.now().strftime("%d-%m-%Y")
 
-        header = sheet.row_values(1)
-        sub_header = sheet.row_values(2)
+    header = sheet.row_values(1)
+    sub_header = sheet.row_values(2)
 
-        print("📅 Today formats:", today1, today2)
+    print("📅 Header Row:", header)
+    print("📅 Sub Header Row:", sub_header)
 
-        for col in range(len(header)):
-            if (header[col] == today1 or header[col] == today2) and sub_header[col] == "Afternoon":
-                print("✅ Column Found:", col + 1)
-                return col + 1
+    last_date = None
 
-    except Exception as e:
-        print("❌ Column detection error:", e)
+    for col in range(len(header)):
+        cell_date = header[col].strip()
+        cell_time = sub_header[col].strip().lower()
 
+        # Handle merged cells
+        if cell_date != "":
+            last_date = cell_date
+
+        if last_date == today and cell_time == "afternoon":
+            print("✅ Column Found:", col + 1)
+            return col + 1
+
+    print("❌ Column NOT found")
     return None
 
 
 # -------------------------------
-# 🟥 MARK ABSENT
+# 🟥 MARK ALL ABSENT
 # -------------------------------
 def mark_all_absent(sheet, col):
     try:
         data = sheet.get_all_records()
 
         for i in range(len(data)):
-            row_number = i + 3
+            row_number = i + 3  # data starts from row 3
             sheet.update_cell(row_number, col, "A")
 
         print("🟥 All students marked ABSENT")
@@ -83,7 +93,7 @@ def mark_all_absent(sheet, col):
 
 
 # -------------------------------
-# 🟩 MARK PRESENT
+# 🟩 MARK PRESENT (ROLL BASED)
 # -------------------------------
 def mark_present_students(sheet, col, scanned_devices):
     try:
@@ -111,7 +121,7 @@ def mark_present_students(sheet, col, scanned_devices):
 
 
 # -------------------------------
-# 🏠 Home
+# 🏠 HOME PAGE
 # -------------------------------
 @app.route('/')
 def home():
@@ -135,7 +145,7 @@ def start_scan():
             print("🔍 BLE Scan started...")
             is_scanning = True
 
-            # SAFE SCAN
+            # Run BLE scan safely
             try:
                 results = asyncio.run(scan_kgrcet_students(duration=15))
             except Exception as e:
@@ -147,7 +157,7 @@ def start_scan():
             print("✅ Scan completed:", last_results)
 
             # -------------------------------
-            # GOOGLE SHEETS
+            # GOOGLE SHEETS UPDATE
             # -------------------------------
             sheet = get_sheet()
 
@@ -161,8 +171,10 @@ def start_scan():
                 print("❌ Column not found")
                 return
 
+            # Step 1: Mark all absent
             mark_all_absent(sheet, col)
 
+            # Step 2: Mark present
             scanned_devices = list(last_results.keys())
             mark_present_students(sheet, col, scanned_devices)
 
@@ -188,7 +200,7 @@ def start_scan():
 
 
 # -------------------------------
-# RESULTS
+# 📊 GET RESULTS
 # -------------------------------
 @app.route('/get_results')
 def get_results():
@@ -198,6 +210,9 @@ def get_results():
     })
 
 
+# -------------------------------
+# 🔄 SCAN STATUS
+# -------------------------------
 @app.route('/scan_status')
 def scan_status():
     return jsonify({
@@ -206,7 +221,7 @@ def scan_status():
 
 
 # -------------------------------
-# RUN
+# 🚀 RUN SERVER
 # -------------------------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)
