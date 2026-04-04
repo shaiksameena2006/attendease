@@ -43,28 +43,33 @@ def save_to_google_sheets(name):
         ]
 
         creds = ServiceAccountCredentials.from_json_keyfile_name(
-            "attendease.json",   # your JSON file
+            "attendease.json",
             scope
         )
 
         client = gspread.authorize(creds)
 
-        sheet = client.open("attendease").sheet1
+        sheet = client.open("Copy of Aavishkar 2026").sheet1
 
-        now = datetime.now()
+        # 🔍 Get all data
+        data = sheet.get_all_records()
 
-        sheet.append_row([
-            name,
-            "present",
-            now.strftime("%Y-%m-%d"),
-            now.strftime("%H:%M:%S")
-        ])
+        for i, row in enumerate(data):
+            # ⚠️ Make sure this matches your column name EXACTLY
+            if row["Name"] == name:
 
-        print("📄 Saved to Google Sheets")
+                row_number = i + 2  # +2 because sheet starts at 1 and header row
+
+                # ✅ Update status column (change column number if needed)
+                sheet.update_cell(row_number, 2, "Present")
+
+                print(f"✅ Updated {name} as Present")
+                return
+
+        print(f"⚠️ {name} not found in sheet")
 
     except Exception as e:
         print("❌ Google Sheets Error:", e)
-
 # -------------------------------
 # 🏠 Home Page
 # -------------------------------
