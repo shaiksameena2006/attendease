@@ -46,7 +46,7 @@ def get_sheet():
 
 
 # -------------------------------
-# 📅 FIND TODAY AFTERNOON COLUMN (MERGED FIX)
+# 📅 FIND TODAY AFTERNOON COLUMN
 # -------------------------------
 def get_today_afternoon_column(sheet):
     today = datetime.now().strftime("%d-%m-%Y")
@@ -75,11 +75,14 @@ def get_today_afternoon_column(sheet):
     return None
 
 
+# -------------------------------
+# 🚀 FAST ATTENDANCE UPDATE (BATCH)
+# -------------------------------
 def update_attendance(sheet, col, scanned_devices):
     try:
         data = sheet.get_all_values()
 
-        # Extract scanned roll numbers
+        # Extract roll numbers
         scanned_rolls = []
         for device in scanned_devices:
             if device.startswith("KGRCET_"):
@@ -90,8 +93,7 @@ def update_attendance(sheet, col, scanned_devices):
 
         updates = []
 
-        # Loop through students (row 3 onwards)
-        for i in range(2, len(data)):
+        for i in range(2, len(data)):  # start from row 3
             row = data[i]
 
             if len(row) < 4:
@@ -103,7 +105,6 @@ def update_attendance(sheet, col, scanned_devices):
             # Default = Absent
             value = "A"
 
-            # If scanned → Present
             if sheet_roll in scanned_rolls:
                 value = "P"
                 print(f"🟩 {sheet_roll} marked PRESENT")
@@ -113,7 +114,7 @@ def update_attendance(sheet, col, scanned_devices):
                 "values": [[value]]
             })
 
-        # 🚀 SINGLE API CALL
+        # SINGLE API CALL
         sheet.batch_update(updates)
 
         print("🚀 Attendance updated in ONE API call")
@@ -147,7 +148,6 @@ def start_scan():
             print("🔍 BLE Scan started...")
             is_scanning = True
 
-            # Run BLE scan safely
             try:
                 results = asyncio.run(scan_kgrcet_students(duration=15))
             except Exception as e:
@@ -159,7 +159,7 @@ def start_scan():
             print("✅ Scan completed:", last_results)
 
             # -------------------------------
-            # GOOGLE SHEETS UPDATE
+            # GOOGLE SHEETS
             # -------------------------------
             sheet = get_sheet()
 
@@ -173,12 +173,10 @@ def start_scan():
                 print("❌ Column not found")
                 return
 
-            # Step 1: Mark all absent
-            mark_all_absent(sheet, col)
-
-            # Step 2: Mark present
             scanned_devices = list(last_results.keys())
-            mark_present_students(sheet, col, scanned_devices)
+
+            # 🚀 ONLY THIS (NO OLD FUNCTIONS)
+            update_attendance(sheet, col, scanned_devices)
 
             # -------------------------------
             # TXT LOG
