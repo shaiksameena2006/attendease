@@ -124,7 +124,12 @@ def start_scan():
             print("🔍 BLE Scan started...")
             is_scanning = True
 
-            results = asyncio.run(scan_kgrcet_students(duration=15))
+            # 🔥 SAFE SCAN (NO CRASH)
+            try:
+                results = asyncio.run(scan_kgrcet_students(duration=15))
+            except Exception as scan_error:
+                print("⚠️ Scan Error (ignored):", scan_error)
+                results = {}
 
             if isinstance(results, dict):
                 last_results = results
@@ -132,6 +137,9 @@ def start_scan():
                 last_results = {}
 
             print("✅ Scan completed:", last_results)
+
+            if not last_results:
+                print("⚠️ No devices found or scan error")
 
             # -------------------------------
             # 📄 GOOGLE SHEETS UPDATE
@@ -153,7 +161,7 @@ def start_scan():
             mark_present_students(sheet, col, scanned_devices)
 
             # -------------------------------
-            # 📝 TXT LOG ONLY
+            # 📝 TXT LOG
             # -------------------------------
             for device in scanned_devices:
                 try:
