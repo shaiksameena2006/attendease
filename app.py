@@ -75,16 +75,13 @@ def get_today_afternoon_column(sheet):
     return None
 
 
-# -------------------------------
-# 🟥 MARK ALL ABSENT
-# -------------------------------
 def mark_all_absent(sheet, col):
     try:
-        data = sheet.get_all_records()
+        data = sheet.get_all_values()
 
-        for i in range(len(data)):
-            row_number = i + 3  # data starts from row 3
-            sheet.update_cell(row_number, col, "A")
+        # Start from row 3 (skip headers)
+        for row in range(3, len(data) + 1):
+            sheet.update_cell(row, col, "A")
 
         print("🟥 All students marked ABSENT")
 
@@ -97,10 +94,10 @@ def mark_all_absent(sheet, col):
 # -------------------------------
 def mark_present_students(sheet, col, scanned_devices):
     try:
-        data = sheet.get_all_records()
+        data = sheet.get_all_values()
 
+        # Extract scanned roll numbers
         scanned_rolls = []
-
         for device in scanned_devices:
             if device.startswith("KGRCET_"):
                 roll = device.replace("KGRCET_", "").strip().upper()
@@ -108,11 +105,15 @@ def mark_present_students(sheet, col, scanned_devices):
 
         print("🎯 Scanned Roll Numbers:", scanned_rolls)
 
-        for i, row in enumerate(data):
-            sheet_roll = str(row["Roll No"]).strip().upper()
+        # Loop through sheet rows
+        for i in range(2, len(data)):  # index 2 = row 3
+            row = data[i]
+
+            # Roll No is column D → index 3
+            sheet_roll = row[3].strip().upper()
 
             if sheet_roll in scanned_rolls:
-                row_number = i + 3
+                row_number = i + 1
                 sheet.update_cell(row_number, col, "P")
                 print(f"🟩 {sheet_roll} marked PRESENT")
 
