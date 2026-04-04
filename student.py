@@ -8,19 +8,30 @@ async def scan_kgrcet_students(duration=15):
     found_students = {}
 
     def detection_callback(device, advertisement_data):
-        # Use advertisement data FIRST (most reliable)
-        name = advertisement_data.local_name or device.name or "Unknown"
+        try:
+            name = advertisement_data.local_name or device.name or "Unknown"
 
-        if name.startswith("KGRCET"):
-            found_students[name] = device.address
+            if name.startswith("KGRCET_"):
+                found_students[name] = device.address
 
-    scanner = BleakScanner(detection_callback)
-    await scanner.start()
+        except Exception as e:
+            print("⚠️ Detection error:", e)
 
-    print(f"📡 Scanning for {duration} seconds...")
-    await asyncio.sleep(duration)
+    try:
+        scanner = BleakScanner(detection_callback)
 
-    await scanner.stop()
+        await scanner.start()
+        print(f"📡 Scanning for {duration} seconds...")
+
+        await asyncio.sleep(duration)
+
+        try:
+            await scanner.stop()
+        except Exception as stop_error:
+            print("⚠️ Scanner stop error (ignored):", stop_error)
+
+    except Exception as scan_error:
+        print("⚠️ Scan error (ignored):", scan_error)
 
     print("✅ Scan finished:", found_students)
 
