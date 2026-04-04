@@ -4,9 +4,6 @@ import threading
 from flask_cors import CORS
 from datetime import datetime
 
-# Supabase
-from supabase import Client, create_client
-
 # Google Sheets
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
@@ -17,14 +14,6 @@ from student import scan_kgrcet_students
 
 app = Flask(__name__, template_folder="templates")
 CORS(app)
-
-# -------------------------------
-# 🔑 SUPABASE CONFIG
-# -------------------------------
-SUPABASE_URL = "https://fvctgxrhvacexqbnvthy.supabase.co"
-SUPABASE_KEY = "YOUR_KEY_HERE"
-
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # -------------------------------
 # 🌍 GLOBAL STATE
@@ -53,18 +42,16 @@ def get_sheet():
 
 
 # -------------------------------
-# 📅 GET TODAY AFTERNOON COLUMN (FIXED)
+# 📅 GET TODAY AFTERNOON COLUMN
 # -------------------------------
 def get_today_afternoon_column(sheet):
-    today1 = datetime.now().strftime("%d-%m-%Y")   # 04-04-2026
-    today2 = datetime.now().strftime("%-d-%-m-%Y") # 4-4-2026 (Mac/Linux)
+    today1 = datetime.now().strftime("%d-%m-%Y")
+    today2 = datetime.now().strftime("%-d-%-m-%Y")
 
     header = sheet.row_values(1)
     sub_header = sheet.row_values(2)
 
     print("📅 Today formats:", today1, today2)
-    print("📅 Header Row:", header)
-    print("📅 Sub Header Row:", sub_header)
 
     for col in range(len(header)):
         if (header[col] == today1 or header[col] == today2) and sub_header[col] == "Afternoon":
@@ -89,7 +76,7 @@ def mark_all_absent(sheet, col):
 
 
 # -------------------------------
-# 🟩 MARK PRESENT (ROLL BASED)
+# 🟩 MARK PRESENT
 # -------------------------------
 def mark_present_students(sheet, col, scanned_devices):
     data = sheet.get_all_records()
@@ -158,37 +145,21 @@ def start_scan():
                 print("❌ STOPPED: Column not found")
                 return
 
-            # Step 1
+            # Step 1: Mark all absent
             mark_all_absent(sheet, col)
 
-            # Step 2
+            # Step 2: Mark present
             scanned_devices = list(last_results.keys())
             mark_present_students(sheet, col, scanned_devices)
 
             # -------------------------------
-            # 💾 SUPABASE + TXT (SAFE)
+            # 📝 TXT LOG ONLY
             # -------------------------------
             for device in scanned_devices:
-
-                try:
-                    data = {
-                        "student_id": device,
-                        "class_id": None,
-                        "date": datetime.now().date().isoformat(),
-                        "status": "present"
-                    }
-
-                    supabase.table("attendance_records").insert(data).execute()
-                    print("✅ Supabase saved:", device)
-
-                except Exception as e:
-                    print("❌ Supabase Error:", e)
-
                 try:
                     with open("attendance_log.txt", "a") as f:
                         f.write(f"{device} - PRESENT - {datetime.now()}\n")
                     print("✅ TXT saved:", device)
-
                 except Exception as e:
                     print("❌ TXT Error:", e)
 
