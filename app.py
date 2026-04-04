@@ -1,169 +1,58 @@
-from flask import Flask, render_template, jsonify
-import asyncio
-import threading
-from flask_cors import CORS
-from datetime import datetime
-
-# Supabase
-from supabase import Client, create_client
-
-# Google Sheets
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-
-# BLE scanner
-from student import scan_kgrcet_students
-
-
-app = Flask(__name__, template_folder="templates")
-CORS(app)
-
 # -------------------------------
-# 🔑 SUPABASE CONFIG
+# 📄 GOOGLE SHEETS FUNCTIONS (UPDATED)
 # -------------------------------
-SUPABASE_URL = "https://fvctgxrhvacexqbnvthy.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2Y3RneHJodmFjZXhxYm52dGh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MTczMjYsImV4cCI6MjA4Nzk5MzMyNn0.LoncwR8EZhE2FnuZcdRmwyIPc03VCVKF-rKFzAbDQPc"
 
-supabase: Client = create_client("https://fvctgxrhvacexqbnvthy.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2Y3RneHJodmFjZXhxYm52dGh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MTczMjYsImV4cCI6MjA4Nzk5MzMyNn0.LoncwR8EZhE2FnuZcdRmwyIPc03VCVKF-rKFzAbDQPc")
+def get_sheet():
+    scope = [
+        "https://spreadsheets.google.com/feeds",
+        "https://www.googleapis.com/auth/drive"
+    ]
 
-# -------------------------------
-# 🌍 GLOBAL STATE
-# -------------------------------
-last_results = {}
-is_scanning = False
+    creds = ServiceAccountCredentials.from_json_keyfile_name(
+        "attendease.json",
+        scope
+    )
 
-# -------------------------------
-# 📄 GOOGLE SHEETS FUNCTION
-# -------------------------------
-def save_to_google_sheets(name):
-    try:
-        scope = [
-            "https://spreadsheets.google.com/feeds",
-            "https://www.googleapis.com/auth/drive"
-        ]
+    client = gspread.authorize(creds)
+    sheet = client.open("Copy of Aavishkar 2026").sheet1
+    return sheet
 
-        creds = ServiceAccountCredentials.from_json_keyfile_name(
-            "attendease.json",
-            scope
-        )
 
-        client = gspread.authorize(creds)
+def get_today_afternoon_column(sheet):
+    today = datetime.now().strftime("%d-%m-%Y")
 
-        sheet = client.open("Copy of Aavishkar 2026").sheet1
+    header = sheet.row_values(1)      # Dates row
+    sub_header = sheet.row_values(2)  # Morning/Afternoon row
 
-        # 🔍 Get all data
-        data = sheet.get_all_records()
+    for col in range(len(header)):
+        if header[col] == today and sub_header[col] == "Afternoon":
+            return col + 1
 
-        for i, row in enumerate(data):
-            # ⚠️ Make sure this matches your column name EXACTLY
-            if row["Name"] == name:
+    return None
 
-                row_number = i + 2  # +2 because sheet starts at 1 and header row
 
-                # ✅ Update status column (change column number if needed)
-                sheet.update_cell(row_number, 2, "Present")
+def mark_all_absent(sheet, col):
+    data = sheet.get_all_records()
 
-                print(f"✅ Updated {name} as Present")
-                return
+    for i in range(len(data)):
+        row_number = i + 3  # data starts from row 3
+        sheet.update_cell(row_number, col, "A")
 
-        print(f"⚠️ {name} not found in sheet")
+    print("🟥 All marked ABSENT")
 
-    except Exception as e:
-        print("❌ Google Sheets Error:", e)
-# -------------------------------
-# 🏠 Home Page
-# -------------------------------
-@app.route('/')
-def home():
-    return render_template('ble_scanner.html')
 
-# -------------------------------
-# 📡 Start BLE Scan
-# -------------------------------
-@app.route('/start_scan', methods=["GET"])
-def start_scan():
-    global is_scanning
+def mark_present_students(sheet, col, scanned_names):
+    data = sheet.get_all_records()
 
-    if is_scanning:
-        return jsonify({"status": "already_running"})
+    for i, row in enumerate(data):
+        sheet_name = row["Name"]
 
-    def run_scan():
-        global last_results, is_scanning
+        for scanned in scanned_names:
+            # 🔥 TEMP MATCH (since names differ)
+            short_name = scanned.replace("KGRCET_", "")
 
-        try:
-            print("🔍 BLE Scan started...")
-            is_scanning = True
-
-            results = asyncio.run(scan_kgrcet_students(duration=15))
-
-            if isinstance(results, dict):
-                last_results = results
-            else:
-                last_results = {}
-
-            print("✅ Scan completed:", last_results)
-
-            # -------------------------------
-            # 💾 SAVE DATA
-            # -------------------------------
-            for student_name in last_results.keys():
-
-                # ✅ Supabase (FIXED UUID ISSUE)
-                data = {
-                    "student_id": student_name,  # ⚠️ using name (temporary)
-                    "class_id": None,
-                    "date": datetime.now().date().isoformat(),
-                    "status": "present"
-                }
-
-                try:
-                    res = supabase.table("attendance_records").insert(data).execute()
-                    print("✅ Saved to Supabase:", res)
-                except Exception as e:
-                    print("❌ Supabase Error:", e)
-
-                # ✅ Google Sheets
-                save_to_google_sheets(student_name)
-
-                # ✅ TXT file
-                try:
-                    with open("attendance_log.txt", "a") as f:
-                        f.write(f"{student_name} - PRESENT - {datetime.now()}\n")
-                except Exception as e:
-                    print("❌ TXT Error:", e)
-
-        except Exception as e:
-            print("❌ Error during scan:", e)
-            last_results = {}
-
-        finally:
-            is_scanning = False
-
-    threading.Thread(target=run_scan, daemon=True).start()
-
-    return jsonify({"status": "started"})
-
-# -------------------------------
-# 📊 Get Results
-# -------------------------------
-@app.route('/get_results', methods=["GET"])
-def get_results():
-    return jsonify({
-        "scanning": is_scanning,
-        "results": last_results
-    })
-
-# -------------------------------
-# 🔄 Scan Status
-# -------------------------------
-@app.route('/scan_status', methods=["GET"])
-def scan_status():
-    return jsonify({
-        "scanning": is_scanning
-    })
-
-# -------------------------------
-# 🚀 Run Server
-# -------------------------------
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=False)
+            if short_name.lower() in sheet_name.lower():
+                row_number = i + 3
+                sheet.update_cell(row_number, col, "P")
+                print(f"🟩 {sheet_name} marked PRESENT")
+                break
