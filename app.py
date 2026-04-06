@@ -36,7 +36,7 @@ def get_sheet():
         )
 
         client = gspread.authorize(creds)
-        sheet = client.open("Copy of Aavishkar 2026").worksheet("Phase 2 - Attendance")
+        sheet = client.open("attendease")
 
         return sheet
 
