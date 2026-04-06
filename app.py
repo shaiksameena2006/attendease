@@ -4,9 +4,14 @@ import threading
 from flask_cors import CORS
 from datetime import datetime
 
+# Supabase
+from supabase import Client, create_client
+
+# Google Sheets
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
+# BLE scanner
 from student import scan_kgrcet_students
 
 
@@ -14,16 +19,23 @@ app = Flask(__name__, template_folder="templates")
 CORS(app)
 
 # -------------------------------
+# 🔑 SUPABASE CONFIG
+# -------------------------------
+SUPABASE_URL = "https://fvctgxrhvacexqbnvthy.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2Y3RneHJodmFjZXhxYm52dGh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MTczMjYsImV4cCI6MjA4Nzk5MzMyNn0"
+
+supabase: Client = create_client("https://fvctgxrhvacexqbnvthy.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ2Y3RneHJodmFjZXhxYm52dGh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MTczMjYsImV4cCI6MjA4Nzk5MzMyNn0")
+
+# -------------------------------
 # 🌍 GLOBAL STATE
 # -------------------------------
 last_results = {}
 is_scanning = False
 
-
 # -------------------------------
-# 📄 GOOGLE SHEETS SETUP
+# 📄 GOOGLE SHEETS FUNCTION
 # -------------------------------
-def get_sheet():
+def save_to_google_sheets(name):
     try:
         scope = [
             "https://spreadsheets.google.com/feeds",
@@ -31,108 +43,37 @@ def get_sheet():
         ]
 
         creds = ServiceAccountCredentials.from_json_keyfile_name(
-            "attendease.json",
+            "attendease.json",   # your JSON file
             scope
         )
 
         client = gspread.authorize(creds)
-        sheet = client.open("attendease")
 
-        return sheet
+        sheet = client.open("attendease").sheet1
 
-    except Exception as e:
-        print("❌ Sheet connection error:", e)
-        return None
+        now = datetime.now()
 
+        sheet.append_row([
+            name,
+            "present",
+            now.strftime("%Y-%m-%d"),
+            now.strftime("%H:%M:%S")
+        ])
 
-# -------------------------------
-# 📅 FIND TODAY AFTERNOON COLUMN
-# -------------------------------
-def get_today_afternoon_column(sheet):
-    today = datetime.now().strftime("%d-%m-%Y")
-
-    header = sheet.row_values(1)
-    sub_header = sheet.row_values(2)
-
-    print("📅 Header Row:", header)
-    print("📅 Sub Header Row:", sub_header)
-
-    last_date = None
-
-    for col in range(len(header)):
-        cell_date = header[col].strip()
-        cell_time = sub_header[col].strip().lower()
-
-        # Handle merged cells
-        if cell_date != "":
-            last_date = cell_date
-
-        if last_date == today and cell_time == "afternoon":
-            print("✅ Column Found:", col + 1)
-            return col + 1
-
-    print("❌ Column NOT found")
-    return None
-
-
-# -------------------------------
-# 🚀 FAST ATTENDANCE UPDATE (BATCH)
-# -------------------------------
-def update_attendance(sheet, col, scanned_devices):
-    try:
-        data = sheet.get_all_values()
-
-        # Extract roll numbers
-        scanned_rolls = []
-        for device in scanned_devices:
-            if device.startswith("KGRCET_"):
-                roll = device.replace("KGRCET_", "").strip().upper()
-                scanned_rolls.append(roll)
-
-        print("🎯 Scanned Roll Numbers:", scanned_rolls)
-
-        updates = []
-
-        for i in range(2, len(data)):  # start from row 3
-            row = data[i]
-
-            if len(row) < 4:
-                continue
-
-            sheet_roll = row[3].strip().upper()
-            row_number = i + 1
-
-            # Default = Absent
-            value = "A"
-
-            if sheet_roll in scanned_rolls:
-                value = "P"
-                print(f"🟩 {sheet_roll} marked PRESENT")
-
-            updates.append({
-                "range": f"{chr(64 + col)}{row_number}",
-                "values": [[value]]
-            })
-
-        # SINGLE API CALL
-        sheet.batch_update(updates)
-
-        print("🚀 Attendance updated in ONE API call")
+        print("📄 Saved to Google Sheets")
 
     except Exception as e:
-        print("❌ Batch update error:", e)
-
+        print("❌ Google Sheets Error:", e)
 
 # -------------------------------
-# 🏠 HOME PAGE
+# 🏠 Home Page
 # -------------------------------
 @app.route('/')
 def home():
     return render_template('ble_scanner.html')
 
-
 # -------------------------------
-# 📡 START SCAN
+# 📡 Start BLE Scan
 # -------------------------------
 @app.route('/start_scan', methods=["GET"])
 def start_scan():
@@ -148,48 +89,47 @@ def start_scan():
             print("🔍 BLE Scan started...")
             is_scanning = True
 
-            try:
-                results = asyncio.run(scan_kgrcet_students(duration=15))
-            except Exception as e:
-                print("⚠️ Scan error:", e)
-                results = {}
+            results = asyncio.run(scan_kgrcet_students(duration=15))
 
-            last_results = results if isinstance(results, dict) else {}
+            if isinstance(results, dict):
+                last_results = results
+            else:
+                last_results = {}
 
             print("✅ Scan completed:", last_results)
 
             # -------------------------------
-            # GOOGLE SHEETS
+            # 💾 SAVE DATA
             # -------------------------------
-            sheet = get_sheet()
+            for student_name in last_results.keys():
 
-            if not sheet:
-                print("❌ Sheet not available")
-                return
+                # ✅ Supabase (FIXED UUID ISSUE)
+                data = {
+                    "student_id": student_name,  # ⚠️ using name (temporary)
+                    "class_id": None,
+                    "date": datetime.now().date().isoformat(),
+                    "status": "present"
+                }
 
-            col = get_today_afternoon_column(sheet)
+                try:
+                    res = supabase.table("attendance_records").insert(data).execute()
+                    print("✅ Saved to Supabase:", res)
+                except Exception as e:
+                    print("❌ Supabase Error:", e)
 
-            if col is None:
-                print("❌ Column not found")
-                return
+                # ✅ Google Sheets
+                save_to_google_sheets(student_name)
 
-            scanned_devices = list(last_results.keys())
-
-            # 🚀 ONLY THIS (NO OLD FUNCTIONS)
-            update_attendance(sheet, col, scanned_devices)
-
-            # -------------------------------
-            # TXT LOG
-            # -------------------------------
-            for device in scanned_devices:
+                # ✅ TXT file
                 try:
                     with open("attendance_log.txt", "a") as f:
-                        f.write(f"{device} - PRESENT - {datetime.now()}\n")
+                        f.write(f"{student_name} - PRESENT - {datetime.now()}\n")
                 except Exception as e:
-                    print("❌ TXT error:", e)
+                    print("❌ TXT Error:", e)
 
         except Exception as e:
-            print("❌ FINAL ERROR:", e)
+            print("❌ Error during scan:", e)
+            last_results = {}
 
         finally:
             is_scanning = False
@@ -198,30 +138,27 @@ def start_scan():
 
     return jsonify({"status": "started"})
 
-
 # -------------------------------
-# 📊 GET RESULTS
+# 📊 Get Results
 # -------------------------------
-@app.route('/get_results')
+@app.route('/get_results', methods=["GET"])
 def get_results():
     return jsonify({
         "scanning": is_scanning,
         "results": last_results
     })
 
-
 # -------------------------------
-# 🔄 SCAN STATUS
+# 🔄 Scan Status
 # -------------------------------
-@app.route('/scan_status')
+@app.route('/scan_status', methods=["GET"])
 def scan_status():
     return jsonify({
         "scanning": is_scanning
     })
 
-
 # -------------------------------
-# 🚀 RUN SERVER
+# 🚀 Run Server
 # -------------------------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)
